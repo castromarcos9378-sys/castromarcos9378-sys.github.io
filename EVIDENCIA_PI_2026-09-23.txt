@@ -1,0 +1,18 @@
+CONSTANCIA PÚBLICA DE HUELLA DIGITAL — 23/09/2026
+
+Proyecto: sistema genérico de registro y control de obra móvil.
+Promotor documentado en el expediente: Marcos Javier [apellidos legales por completar].
+
+Esta constancia publica únicamente huellas SHA-256. No publica el código fuente genérico ni activos de clientes.
+
+Archivo cerrado de versión genérica de referencia:
+B_PRODUCTO_GENERICO_SRCOM_V1.zip
+SHA-256: 40303094b68e77bd1078ec88a2a3e4f44ae5879b5b4e486b0bfed34bba686a12
+
+Paquete documental completo de protección PI:
+PAQUETE_PROTECCION_PI_REGISTRO_OBRA_MOVIL_2026-09-23.zip
+SHA-256 (primera construcción cerrada): b99642a63bf077686915067e3b238f823e86f41e57c8a14e54693179583a23f4
+
+Objeto de esta constancia: dejar una referencia cronológica pública verificable de los archivos cerrados, sin divulgar el contenido reservado de la versión genérica.
+
+Nota: esta evidencia técnica no sustituye el registro oficial ni determina por sí sola la titularidad jurídica frente a terceros.

@@ -1,0 +1,21 @@
+{
+  "id": "./",
+  "name": "DAOS · Registro de Obra Móvil",
+  "short_name": "DAOS",
+  "description": "Registro móvil de obra DAOS",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#132b48",
+  "theme_color": "#132b48",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "./daos-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

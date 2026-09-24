@@ -1,4 +1,4 @@
-const CACHE='atalia-registro-v1-0-2-install-20260924';
+const CACHE='atalia-registro-v1-0-3-separate-pwa-20260924';
 const CORE=['./','./index.html','./manifest.webmanifest','./atalia-icon.svg','./sw.js'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==CACHE).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));

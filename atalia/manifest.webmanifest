@@ -17,5 +17,12 @@
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
+  ],
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "/atalia/manifest.webmanifest",
+      "id": "/atalia/"
+    }
   ]
 }

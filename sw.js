@@ -1,4 +1,4 @@
-const CACHE='daos-registro-v10-1-isolated-atalia-20260924';
+const CACHE='daos-registro-v10-1-scope-fix-20260924';
 const CORE=['./','./index.html','./manifest.webmanifest','./daos-icon.svg','./sw.js'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==CACHE).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));

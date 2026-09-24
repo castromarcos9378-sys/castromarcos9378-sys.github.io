@@ -576,41 +576,91 @@ async function appendMobileRecordsToWorkbook(buffer,manifests){
  let headerRow=null,headers=null;
  for(const row of rows){const vals=rowValues(row,shared),norm=vals.map(normalized);if(required.every(h=>norm.includes(normalized(h)))){headerRow=row;headers=vals;break}}
  if(!headerRow)throw Error('No se encontró la cabecera completa de Registro de Obra');
- const headNo=Number(headerRow.getAttribute('r')||0),hmap=new Map(headers.map((h,i)=>[normalized(h),i+1]).filter(x=>x[0]));
- let maxId=0,lastDataNo=headNo,lastDataRow=null;const existingIds=new Set(),existingSigs=new Set();
+ const headNo=Number(headerRow.getAttribute('r')||0),hmap=new Map(headers.map((h,i)=>[normalized(h),i+1]).filter(x=>x[0])),sheetData=childrenLocal(ws,'sheetData')[0];
+ if(!sheetData)throw Error('Registro de Obra no contiene sheetData');
+
+ let maxId=0,lastDataNo=headNo,lastDataRow=null;
+ const existingIds=new Set(),existingSigs=new Set(),rowByNo=new Map();
  for(const row of rows){
+  const rn=Number(row.getAttribute('r')||0);if(rn)rowByNo.set(rn,row);
   const vals=rowValues(row,shared),id=Number(vals[(hmap.get('id registro')||1)-1]);
-  if(!Number.isInteger(id))continue;maxId=Math.max(maxId,id);const rn=Number(row.getAttribute('r')||0);if(rn>=lastDataNo){lastDataNo=rn;lastDataRow=row}
-  const obs=String(vals[(hmap.get('observaciones')||13)-1]||''),mm=obs.match(/Registro m[oó]vil\s*[·:-]\s*(ATALIA-[A-Za-z0-9_-]+)/i);if(mm)existingIds.add(mm[1]);
+  if(!Number.isInteger(id))continue;
+  maxId=Math.max(maxId,id);
+  if(rn>=lastDataNo){lastDataNo=rn;lastDataRow=row}
+  const obs=String(vals[(hmap.get('observaciones')||13)-1]||''),mm=obs.match(/Registro m[oó]vil\s*[·:-]\s*(ATALIA-[A-Za-z0-9_-]+)/i);
+  if(mm)existingIds.add(mm[1]);
   if(/registro m[oó]vil/i.test(obs))existingSigs.add([Number(vals[(hmap.get('villa')||2)-1]),String(vals[(hmap.get('actividad general')||4)-1]||'').trim(),String(vals[(hmap.get('subactividad')||5)-1]||'').trim(),String(vals[(hmap.get('estado')||9)-1]||'').trim(),excelDateISO(vals[(hmap.get('fecha inicio')||7)-1])].join('|'))
  }
- const oldLast=lastDataNo,styles=styleMapFromRow(lastDataRow),sheetData=childrenLocal(ws,'sheetData')[0];if(!sheetData)throw Error('Registro de Obra no contiene sheetData');
+ const oldLast=lastDataNo,baseStyles=styleMapFromRow(lastDataRow);
+
+ function cellColumnNumber(cell){
+  const ref=cell.getAttribute('r')||'',letters=ref.match(/^[A-Z]+/i)?.[0]||'';let n=0;
+  for(const x of letters.toUpperCase())n=n*26+x.charCodeAt(0)-64;return n
+ }
+ function buildCell(letter,rowNo,val,style){
+  const xml=cellXml(letter,rowNo,val,style),doc=new DOMParser().parseFromString('<root xmlns="'+ws.documentElement.namespaceURI+'">'+xml+'</root>','application/xml');
+  return Array.from(doc.documentElement.childNodes).find(n=>n.localName==='c')
+ }
+ function getCell(row,col){
+  return Array.from(row.childNodes).find(n=>n.localName==='c'&&cellColumnNumber(n)===col)||null
+ }
+ function setCell(row,rowNo,col,val,styleFallback){
+  const letter=colLetters(col),old=getCell(row,col),style=old?.getAttribute('s')??styleFallback??baseStyles.get(letter)??null,newCell=buildCell(letter,rowNo,val,style);
+  if(old)row.replaceChild(row.ownerDocument.importNode(newCell,true),old);
+  else{
+   const imported=row.ownerDocument.importNode(newCell,true),next=Array.from(row.childNodes).find(n=>n.localName==='c'&&cellColumnNumber(n)>col);
+   if(next)row.insertBefore(imported,next);else row.appendChild(imported)
+  }
+ }
+ function ensureRow(rowNo){
+  let row=rowByNo.get(rowNo);
+  if(row)return row;
+  const doc=new DOMParser().parseFromString('<root xmlns="'+ws.documentElement.namespaceURI+'"><row r="'+rowNo+'"/></root>','application/xml'),made=Array.from(doc.documentElement.childNodes).find(n=>n.localName==='row'),imported=ws.importNode(made,true);
+  const next=Array.from(sheetData.childNodes).find(n=>n.localName==='row'&&Number(n.getAttribute('r')||0)>rowNo);
+  if(next)sheetData.insertBefore(imported,next);else sheetData.appendChild(imported);
+  rowByNo.set(rowNo,imported);return imported
+ }
+
  let added=0,duplicates=0;const addedIds=[],verifiedIds=[];
  for(const m of manifests){
   if(!m||m.formato!=='ATALIA_MOVIL_REVISION_V1'||!m.registro?.id)continue;
-  const r=m.registro;if(existingIds.has(r.id)){duplicates++;verifiedIds.push(r.id);continue}
+  const r=m.registro;
+  if(existingIds.has(r.id)){duplicates++;verifiedIds.push(r.id);continue}
   const sig=[Number(r.villa),String(r.actividad||'').trim(),String(r.subactividad||'').trim(),String(r.estado||'').trim(),String(r.fechaInicio||'')].join('|');
   if(existingSigs.has(sig)){duplicates++;verifiedIds.push(r.id);continue}
   if(source.villas[r.villa]!==r.tipo)throw Error('La tipología de villa '+r.villa+' cambió en la Base Maestra.');
   const aw=Number(source.activityWeights?.[r.actividad]||0),sw=r.subactividad==='COMPLETA'?aw:Number(source.subWeights?.[r.actividad]?.[r.subactividad]||0);
-  if(!aw&&r.actividad!=='')throw Error('No se encontró el peso de '+r.actividad+' en CATÁLOGOS.');
-  const rowNo=++lastDataNo,id=++maxId,completed=normalized(r.estado)==='completada';
+  if(!aw)throw Error('No se encontró el peso de '+r.actividad+' en CATÁLOGOS.');
+
+  const rowNo=++lastDataNo,id=++maxId,row=ensureRow(rowNo),rowStyles=styleMapFromRow(row),completed=normalized(r.estado)==='completada';
   const values={'id registro':id,'villa':Number(r.villa),'tipo de villa':r.tipo,'actividad general':r.actividad,'subactividad':r.subactividad,'contratista':'ECM','fecha inicio':excelSerial(r.fechaInicio),'fecha terminación':excelSerial(r.fechaFin),'estado':r.estado,'porcentaje actividad':aw,'porcentaje subactividad':sw,'avance registro':completed?sw:0,'observaciones':finalObservation(r)};
-  const cells=[];for(const [key,col] of hmap){if(!(key in values))continue;const letter=colLetters(col),val=values[key];cells.push({col,xml:cellXml(letter,rowNo,val,styles.get(letter))})}cells.sort((a,b)=>a.col-b.col);
-  const rowXml='<row r="'+rowNo+'">'+cells.map(x=>x.xml).join('')+'</row>',rowDoc=new DOMParser().parseFromString('<root xmlns="'+ws.documentElement.namespaceURI+'">'+rowXml+'</root>','application/xml'),newRow=Array.from(rowDoc.documentElement.childNodes).find(n=>n.localName==='row');
-  sheetData.appendChild(ws.importNode(newRow,true));existingIds.add(r.id);existingSigs.add(sig);addedIds.push(r.id);verifiedIds.push(r.id);added++
+  for(const [key,col] of hmap){
+   if(!(key in values))continue;
+   const existing=getCell(row,col),hasFormula=!!existing&&childrenLocal(existing,'f').length>0;
+   if(hasFormula&&['porcentaje actividad','porcentaje subactividad','avance registro'].includes(key))continue;
+   setCell(row,rowNo,col,values[key],rowStyles.get(colLetters(col)))
+  }
+  existingIds.add(r.id);existingSigs.add(sig);addedIds.push(r.id);verifiedIds.push(r.id);added++
  }
+
  const dim=childrenLocal(ws,'dimension')[0];if(dim&&dim.getAttribute('ref'))dim.setAttribute('ref',extendRef(dim.getAttribute('ref'),lastDataNo));
  for(const af of childrenLocal(ws,'autoFilter'))if(af.getAttribute('ref'))af.setAttribute('ref',extendRef(af.getAttribute('ref'),lastDataNo));
  files.set(sheetPath,textEncoder.encode(new XMLSerializer().serializeToString(ws)));
+
  for(const [name,data] of Array.from(files)){
   if(!/^xl\/tables\/table\d+\.xml$/i.test(name))continue;
   try{
-   const tx=xmlBytes(files,name),table=childrenLocal(tx,'table')[0];if(!table)continue;const ref=table.getAttribute('ref')||'',mm=ref.match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/i);
-   if(mm&&Number(mm[2])===headNo&&Number(mm[4])===oldLast){table.setAttribute('ref',mm[1]+mm[2]+':'+mm[3]+lastDataNo);for(const af of childrenLocal(tx,'autoFilter'))if(af.getAttribute('ref'))af.setAttribute('ref',mm[1]+mm[2]+':'+mm[3]+lastDataNo);files.set(name,textEncoder.encode(new XMLSerializer().serializeToString(tx)))}
+   const tx=xmlBytes(files,name),table=childrenLocal(tx,'table')[0];if(!table)continue;
+   const ref=table.getAttribute('ref')||'',mm=ref.match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/i);
+   if(mm&&Number(mm[2])===headNo&&Number(mm[4])<lastDataNo){
+    table.setAttribute('ref',mm[1]+mm[2]+':'+mm[3]+lastDataNo);
+    for(const af of childrenLocal(tx,'autoFilter'))if(af.getAttribute('ref'))af.setAttribute('ref',mm[1]+mm[2]+':'+mm[3]+lastDataNo);
+    files.set(name,textEncoder.encode(new XMLSerializer().serializeToString(tx)))
+   }
   }catch(_){}
  }
- markFullRecalc(files);return {bytes:writeZipStore(files),added,duplicates,addedIds,verifiedIds,lastId:maxId,lastRow:lastDataNo}
+ markFullRecalc(files);
+ return {bytes:writeZipStore(files),added,duplicates,addedIds,verifiedIds,lastId:maxId,lastRow:lastDataNo}
 }
 async function listFolderAll(path){let r=await dropboxRPC('files/list_folder',{path,recursive:false,include_deleted:false,limit:1000}),all=[...(r.entries||[])],guard=0;while(r.has_more){if(++guard>20)throw Error('Listado Dropbox demasiado extenso');r=await dropboxRPC('files/list_folder/continue',{cursor:r.cursor});all.push(...(r.entries||[]))}return all}
 async function getOperationalBookEntry(){

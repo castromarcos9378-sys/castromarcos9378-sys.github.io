@@ -495,41 +495,70 @@ $('save').onclick=async()=>{
 function statusFor(v,a,s){return history.get(recordKey(v,a,s))||null}
 function isCompleted(h){return !!h&&normalized(h.estado)==='completada'}
 function statusInfo(h){if(!h)return {title:'FALTA',detail:'Sin registro'};if(isCompleted(h))return {title:'HECHA',detail:'Completada'};if(normalized(h.estado)==='en ejecución')return {title:'EN EJECUCIÓN',detail:'Trabajo iniciado'};return {title:h.estado||'FALTA',detail:'Revisar'}}
+// La hoja PENDIENTES de la Base Maestra evalúa las subactividades con peso de avance.
+// Los controles económicos de peso 0 permanecen visibles y registrables sin falsear el avance.
+function weightedSubactivities(activity,subs){
+ return subs.filter(s=>s!=='COMPLETA'&&Number(reference?.subWeights?.[activity]?.[s]||0)>0);
+}
+function activityProgressComplete(v,activity,subs){
+ return isCompleted(statusFor(v,activity,'COMPLETA')) ||
+  (subs.length>0&&subs.every(s=>isCompleted(statusFor(v,activity,s))));
+}
 function renderPending(){
  const v=$('pendingVilla').value,view=$('pendingContent');$('pendingTipo').textContent=v?(villas[v]||'Sin tipología'):'Selecciona una villa';
  if(!reference){view.innerHTML='<div class="noitems">Conecta Dropbox o carga la Base Maestra para consultar pendientes reales.</div>';return}
  if(!v){view.innerHTML='<div class="noitems">Selecciona una villa para consultar las partidas.</div>';return}
  view.replaceChildren();
- const info=document.createElement('div');info.className='infobox pending-source';info.textContent='Pendientes calculados directamente desde Registro de Obra y el catálogo vigente. No se inventan actividades ni se repiten partidas completadas.';view.append(info);
- let totalMissing=0;
+ const info=document.createElement('div');info.className='infobox pending-source';info.textContent='Avance según registros y catálogo de la Base Maestra. Los controles de cubicación sin peso se muestran por separado: ausencia de registro NO significa obra sin ejecutar.';view.append(info);
+ let totalMissing=0,totalEconomicUnverified=0;
  for(const [activity,subs0] of catalog){
-  const complete=statusFor(v,activity,'COMPLETA'),subs=subs0.filter(s=>s!=='COMPLETA'),doneActivity=isCompleted(complete);
-  const details=document.createElement('details');details.className='activity';details.open=!doneActivity;
+  const weighted=weightedSubactivities(activity,subs0),extra=subs0.filter(s=>s!=='COMPLETA'&&Number(reference.subWeights?.[activity]?.[s]||0)===0);
+  const fullRecorded=isCompleted(statusFor(v,activity,'COMPLETA')),progressComplete=activityProgressComplete(v,activity,weighted);
+  const details=document.createElement('details');details.className='activity';details.open=!progressComplete;
   const summary=document.createElement('summary'),title=document.createElement('span');title.textContent=activity;
-  const badge=document.createElement('span');badge.className='badge '+(doneActivity?'':'warn');
-  if(doneActivity)badge.textContent='ACTIVIDAD COMPLETA';
-  else{
-   const done=subs.filter(s=>isCompleted(statusFor(v,activity,s))).length;
-   badge.textContent=done+'/'+subs.length+' HECHAS'
-  }
+  const badge=document.createElement('span');badge.className='badge '+(progressComplete?'':'warn');
+  const done=weighted.filter(s=>isCompleted(statusFor(v,activity,s))).length;
+  badge.textContent=progressComplete?'AVANCE COMPLETO':done+'/'+weighted.length+' HECHAS';
   summary.append(title,badge);details.append(summary);
-  if(doneActivity){
-   const row=document.createElement('div');row.className='item';const label=document.createElement('div');label.innerHTML='<strong>Completa</strong><br><span class="soft">No volver a registrar esta actividad.</span>';row.append(label);details.append(row)
-  }else{
-   const missing=subs.filter(s=>!isCompleted(statusFor(v,activity,s)));totalMissing+=missing.length;
-   for(const sub of missing){
-    const h=statusFor(v,activity,sub),st=statusInfo(h),div=document.createElement('div');div.className='item';
+  const missing=fullRecorded?[]:weighted.filter(s=>!isCompleted(statusFor(v,activity,s)));
+  totalMissing+=missing.length;
+  if(progressComplete){
+   const row=document.createElement('div');row.className='item';
+   row.innerHTML='<div><strong>Avance completo según Base Maestra</strong><br><span class="soft">No volver a registrar las subactividades ya completadas.</span></div>';
+   details.append(row);
+  }
+  for(const sub of missing){
+   const h=statusFor(v,activity,sub),st=statusInfo(h),div=document.createElement('div');div.className='item';
+   const label=document.createElement('div'),strong=document.createElement('strong');strong.textContent=sub;
+   const soft=document.createElement('span');soft.className='soft';soft.textContent=st.title;
+   label.append(strong,document.createElement('br'),soft);
+   const button=document.createElement('button');button.type='button';button.className='btn outline';button.textContent='Registrar →';
+   button.onclick=()=>{$('villa').value=v;onVilla();$('actividad').value=activity;onActivity();$('subactividad').value=sub;refreshExisting();switchTab('registro')};
+   div.append(label,button);details.append(div);
+  }
+  // No confundir registro económico con el avance físico. Conservar incluso cuando el nivel está completo.
+  const extraMissing=fullRecorded?[]:extra.filter(s=>!isCompleted(statusFor(v,activity,s)));
+  if(extraMissing.length){
+   totalEconomicUnverified+=extraMissing.length;
+   const note=document.createElement('div');note.className='infobox';
+   note.innerHTML='<strong>CONTROL DE CUBICACIÓN · sin peso en avance</strong><br>Sin registro individual confirmado. Puede estar ejecutado: verifica la evidencia y el pago antes de registrar; no se declara como trabajo físico pendiente.';
+   details.append(note);
+   for(const sub of extraMissing){
+    const div=document.createElement('div');div.className='item';
     const label=document.createElement('div'),strong=document.createElement('strong');strong.textContent=sub;
-    const soft=document.createElement('span');soft.className='soft';soft.textContent=st.title+(Number(reference.subWeights?.[activity]?.[sub]||0)===0?' · control sin peso':'');
+    const soft=document.createElement('span');soft.className='soft';soft.textContent='REGISTRO ECONÓMICO POR VERIFICAR · avance no afectado';
     label.append(strong,document.createElement('br'),soft);
-    const button=document.createElement('button');button.type='button';button.className='btn outline';button.textContent='Registrar →';
+    const button=document.createElement('button');button.type='button';button.className='btn outline';button.textContent='Revisar →';
     button.onclick=()=>{$('villa').value=v;onVilla();$('actividad').value=activity;onActivity();$('subactividad').value=sub;refreshExisting();switchTab('registro')};
-    div.append(label,button);details.append(div)
+    div.append(label,button);details.append(div);
    }
   }
-  view.append(details)
+  if(progressComplete&&extraMissing.length)details.open=true;
+  view.append(details);
  }
- const foot=document.createElement('div');foot.className='warnbox';foot.textContent=totalMissing?'Subactividades aún no completadas: '+totalMissing+'.':'No hay subactividades pendientes para esta villa.';view.append(foot)
+ const foot=document.createElement('div');foot.className='warnbox';
+ foot.textContent='Pendientes de avance: '+totalMissing+'. Controles económicos sin registro individual: '+totalEconomicUnverified+'. Un control sin registrar no significa trabajo sin ejecutar.';
+ view.append(foot)
 }
 let pendingRefreshInFlight=false,pendingRefreshAt=0;
 async function refreshPendingReference(){

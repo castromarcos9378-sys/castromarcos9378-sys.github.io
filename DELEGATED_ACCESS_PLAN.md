@@ -62,3 +62,14 @@ Fecha de inicio: 2026-09-28. Objetivo: teléfonos de empresa; propietario mantie
 - Si cambia el responsable, se entrega el teléfono del proyecto al nuevo encargado; no se rehace la aplicación ni se modifica el histórico.
 - La identidad técnica que controla/revoca el servidor corresponde al teléfono y proyecto, no a la persona. No asociar automáticamente cada registro a José/Andrés como autor físico sin pruebas.
 - La identificación del **contratista que ejecutó la actividad** sigue siendo un dato distinto del responsable de manejar el teléfono.
+
+## Avance del desarrollo para el iPhone ATALÍA (2026-09-28)
+- [x] Pantalla aislada de activación preparada en `atalia/delegado/`, con manifest PWA propio (iPhone).
+- [x] Endpoints de activación, estado de autorización y cierre de sesión en la rama de prueba.
+- [x] Autorización asociada exclusivamente al dispositivo/proyecto ATALÍA, sin cuentas personales.
+- [x] Cookies `Secure`, `HttpOnly`, `SameSite=Strict` y revocación comprobada en cada petición mediante credenciales configurables del servidor.
+- [x] Servicio de caché ajustado en la rama de pruebas para no guardar respuestas privadas de la API.
+- [ ] Aún NO hay acceso del dispositivo a los registros ni sincronización delegada. La pantalla de prueba lo comunica explícitamente.
+- [ ] Desarrollar referencia operativa y sincronización servidor/Dropbox, con pruebas de historial, copias, fotos, idempotencia y conflictos antes de instalar la versión productiva delegada.
+- [ ] El propietario debe configurar los secretos en Vercel a través de su propia sesión; nunca pasarlos en chat ni publicarlos en GitHub.
+- [ ] Verificar el iPhone de José físicamente y hacer las pruebas en campo.

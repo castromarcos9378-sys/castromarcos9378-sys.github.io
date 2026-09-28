@@ -24,8 +24,9 @@ function authenticate(authHeader) {
     if (typeof d?.token_sha256 !== 'string' || !/^[a-f0-9]{64}$/i.test(d.token_sha256)) continue;
     if (!crypto.timingSafeEqual(digest, Buffer.from(d.token_sha256, 'hex'))) continue;
     if (d.enabled !== true || !['atalia','daos'].includes(d.project)
-        || typeof d.id !== 'string' || !/^[a-z0-9_-]{3,80}$/i.test(d.id)) return null;
-    return { id: d.id, project: d.project };
+        || typeof d.id !== 'string' || !/^[a-z0-9_-]{3,80}$/i.test(d.id)
+        || typeof d.operator_id !== 'string' || !/^[a-z0-9_-]{3,80}$/i.test(d.operator_id)) return null;
+    return { id: d.id, project: d.project, operator_id: d.operator_id };
   }
   return null;
 }
@@ -51,7 +52,7 @@ module.exports = function delegatedStatus(req, res) {
   const device = authenticate(req.headers.authorization);
   if (!device) return send(res, 401, { error: 'Device not authorized' });
   return send(res, 200, {
-    active: true, device: device.id, project: device.project,
+    active: true, device: device.id, project: device.project, operator: device.operator_id,
     syncReady: false, message: 'Identity verified. Delegated synchronization is not yet enabled.'
   });
 };

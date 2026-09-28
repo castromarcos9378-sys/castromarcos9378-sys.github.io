@@ -288,9 +288,10 @@ const INITIAL_CATALOG = [
  ['NIVEL 1',['COMPLETA','Cimbrado','Colocación de acero vertical','Tubería eléctrica','Tubería potable','Tubería sanitaria','Colocación del tache','Formaletas','Colocación de acero de losa de entrepiso','Inspección de acero y losa de entrepiso','Vaciado de muros + losa de entrepiso','Rastreado / Regleado']],
  ['NIVEL 2',['COMPLETA','Cimbrado','Colocación de acero vertical','Tubería eléctrica','Tubería potable','Tubería sanitaria','Colocación del tache','Formaletas','Colocación de acero de losa de techo','Inspección de acero y losa de techo','Vaciado de muros + losa de techo','Rastreado / Regleado']],
  ['ESCALERAS',['COMPLETA','Cimbrado','Colocación de acero','Encofrado','Inspección','Vaciado']],
- ['ANTEPECHOS',['COMPLETA','Colocación de bloques perimetrales','Inspección de antepechos']],
- ['ACABADOS',['COMPLETA','Pañete con estuco','Fino de techo','Resane']]
+ ['ANTEPECHOS',['COMPLETA','Colocación de bloques en losa de techo','Colocación de bloques en balcón (Nivel 1)','Colocación de bloques en escaleras y ventanas']],
+ ['ACABADOS',['COMPLETA','Resane general','Filo y mocheta','Fino de techo y gotero','Estuco interior','Estuco exterior']]
 ];
+const LEGACY_ATALIA_SUBS={ANTEPECHOS:['Colocación de bloques perimetrales','Inspección de antepechos'],ACABADOS:['Pañete con estuco','Fino de techo','Resane']};
 const VILLA_TYPES={"7":"C","8":"C","9":"C","10":"B","11":"C","12":"C","13":"C","14":"C","15":"C","16":"B","17":"B","18":"C","19":"C","20":"C","21":"C","22":"C","23":"C","24":"C","107":"C","108":"B","109":"B","110":"C","111":"B","112":"C","113":"C","114":"C","115":"B","116":"B","117":"C","118":"C","119":"C","120":"C","121":"B","122":"C","123":"C","124":"B","125":"B","126":"C","127":"B","128":"B","129":"C","130":"B","131":"C","132":"B","133":"C","134":"C","135":"B","136":"B","137":"C","138":"C","139":"C","140":"C"};
 let catalog=INITIAL_CATALOG, villas={...VILLA_TYPES}, history=new Map(), reference=null, pendingPhotos=[], records=[], db=null, saving=false;
 const $=id=>document.getElementById(id), today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
@@ -302,19 +303,21 @@ function hydrateLists(){const numbers=Object.keys(villas).map(Number).sort((a,b)
 function onVilla(){const n=$('villa').value;$('tipo').textContent=n?(villas[n]||'No disponible'):'Selecciona una villa';refreshExisting()}
 function onActivity(){const activity=$('actividad').value;let group=catalog.find(x=>x[0]===activity);fillSelect($('subactividad'),group?group[1]:[],'Seleccionar subactividad');$('subactividad').disabled=!group;$('specialtyBox').classList.add('hidden');refreshExisting()}
 const recordKey=(v,a,s)=>`${v}|${a} | ${s}`;
+function legacyCompletionConflict(v,a){return (LEGACY_ATALIA_SUBS[a]||[]).filter(s=>isCompleted(history.get(recordKey(v,a,s))))}
 function refreshExisting(){
  const v=$('villa').value,a=$('actividad').value,s=$('subactividad').value,box=$('existingState');
  $('specialtyBox').classList.add('hidden');
  if(!(v&&a&&s)){box.innerHTML='';return}
  if(!reference){showMessage(box,'warn','Base Maestra no cargada. El guardado permanece bloqueado.');return}
- const whole=history.get(recordKey(v,a,'COMPLETA')),h=history.get(recordKey(v,a,s)),local=records.filter(r=>String(r.villa)===String(v)&&r.actividad===a&&r.subactividad===s);
+ const whole=history.get(recordKey(v,a,'COMPLETA')),h=history.get(recordKey(v,a,s)),local=records.filter(r=>String(r.villa)===String(v)&&r.actividad===a&&r.subactividad===s),legacy=legacyCompletionConflict(v,a);
  let txt='';
  if(isCompleted(whole)&&s!=='Rastreado / Regleado')txt='<strong>Actividad completa:</strong> '+escapeHTML(a)+' ya consta completada en la Base Maestra. No debe volver a registrarse.';
  else if(h)txt='<strong>En Base Maestra:</strong> '+escapeHTML(h.estado)+' · contratista: '+escapeHTML(h.contratista||h.origen||'No indicado')+'.';
  else txt='<strong>En Base Maestra:</strong> esta subactividad aún no tiene un registro completado.';
  if(Number(reference.subWeights?.[a]?.[s]||0)===0&&s!=='COMPLETA')txt+=' <strong>Control sin peso de avance.</strong>';
+ if(legacy.length)txt+=' <strong>REVISIÓN OBLIGATORIA:</strong> historial ya completado en la misma actividad: '+escapeHTML(legacy.join(', '))+'. No registrar con los nombres nuevos hasta conciliar el trabajo previo.';
  if(local.length)txt+=' <strong>Registros locales sin incorporar: '+local.length+'.</strong>';
- showMessage(box,isCompleted(whole)&&s!=='Rastreado / Regleado'?'warn':'info',txt)
+ showMessage(box,(legacy.length||isCompleted(whole)&&s!=='Rastreado / Regleado')?'warn':'info',txt)
 }
 $('villa').addEventListener('change',onVilla);$('actividad').addEventListener('change',onActivity);$('subactividad').addEventListener('change',refreshExisting);
 function switchTab(name){
@@ -392,13 +395,13 @@ function excelDateISO(v){
 function parseAtaliaCatalog(rows){
  const hi=rows.findIndex(row=>row.map(normalized).includes('actividades')&&row.map(normalized).includes('porcentaje actividad')&&row.map(normalized).includes('subactividad'));
  if(hi<0)throw Error('No se encontró la estructura de CATÁLOGOS.');
- const h=rows[hi].map(normalized),iActs=h.indexOf('actividades'),iActPct=h.indexOf('porcentaje actividad'),iRightAct=h.lastIndexOf('actividad'),iSub=h.lastIndexOf('subactividad'),iPct=h.lastIndexOf('porcentaje');
+ const h=rows[hi].map(normalized),iActs=h.indexOf('actividades'),iActPct=h.indexOf('porcentaje actividad'),iRightAct=h.lastIndexOf('actividad'),iSub=h.lastIndexOf('subactividad'),iPct=h.lastIndexOf('porcentaje'),iClass=h.indexOf('tipo de registro');
  const activityWeights={},subWeights={},subs={};
  for(const row of rows.slice(hi+1)){
   const a=String(row[iActs]??'').trim();
   if(a&&a!=='PENDIENTE'&&['PLATEA','NIVEL 1','NIVEL 2','ESCALERAS','ANTEPECHOS','ACABADOS'].includes(a))activityWeights[a]=pctValue(row[iActPct]);
   const ra=String(row[iRightAct]??'').trim(),rs=String(row[iSub]??'').trim();
-  if(ra&&rs&&['PLATEA','NIVEL 1','NIVEL 2','ESCALERAS','ANTEPECHOS','ACABADOS'].includes(ra)){
+  if(ra&&rs&&String(row[iClass]??'').trim()!=='HISTÓRICO'&&['PLATEA','NIVEL 1','NIVEL 2','ESCALERAS','ANTEPECHOS','ACABADOS'].includes(ra)){
    if(!subs[ra])subs[ra]=[];if(!subs[ra].includes(rs))subs[ra].push(rs);
    if(!subWeights[ra])subWeights[ra]={};subWeights[ra][rs]=pctValue(row[iPct])
   }
@@ -421,7 +424,7 @@ function sourceFromSheets(sheets){
  const ci=parseAtaliaCatalog(sheets['CATÁLOGOS']),log=parseTable(sheets['REGISTRO DE OBRA'],['ID Registro','Villa','Tipo de Villa','Actividad General','Subactividad','Estado']),map=new Map();
  for(const row of log){
   const id=Number(row['id registro']),n=Number(row.villa),a=String(row['actividad general']||'').trim(),s=String(row.subactividad||'').trim();
-  if(!Number.isInteger(id)||!v[n]||!ci.catalog.some(g=>g[0]===a&&g[1].includes(s)))continue;
+  if(!Number.isInteger(id)||!v[n]||!(ci.catalog.some(g=>g[0]===a&&g[1].includes(s))||(LEGACY_ATALIA_SUBS[a]||[]).includes(s)))continue;
   const key=recordKey(n,a,s),cur=map.get(key);
   if(!cur||id>=cur.id)map.set(key,{id,estado:String(row.estado||'').trim(),origen:String(row.contratista||'').trim(),contratista:String(row.contratista||'').trim(),observacion:String(row.observaciones||'').trim(),fechaInicio:excelDateISO(row['fecha inicio']),fechaFin:excelDateISO(row['fecha terminación'])})
  }
@@ -479,6 +482,8 @@ $('save').onclick=async()=>{
  const complete=history.get(recordKey(villa,actividad,'COMPLETA')),h=history.get(recordKey(villa,actividad,subactividad));
  if(complete&&normalized(complete.estado)==='completada'&&subactividad!=='Rastreado / Regleado')return showMessage(msg,'warn','Esta actividad ya consta COMPLETA en la Base Maestra. No se creará un registro repetido.');
  if(h&&normalized(h.estado)==='completada')return showMessage(msg,'warn','Esta subactividad ya consta completada en la Base Maestra.');
+ const legacyDone=legacyCompletionConflict(villa,actividad);
+ if(legacyDone.length)return showMessage(msg,'warn','Esta villa tiene trabajos históricos registrados bajo el catálogo anterior ('+escapeHTML(legacyDone.join(', '))+'). Es necesaria una conciliación antes de registrar las nuevas subactividades.');
  const aw=Number(reference.activityWeights?.[actividad]||0),sw=subactividad==='COMPLETA'?aw:Number(reference.subWeights?.[actividad]?.[subactividad]||0);
  const r={id:uuid(),project:'ATALIA',villa:Number(villa),tipo:villas[villa],actividad,subactividad,especialidad:'',estado,fechaInicio,fechaFin,observacion,anterior:h?.estado||'',origen:'Registro móvil pendiente de revisión',referencia:reference.filename,clave:recordKey(villa,actividad,subactividad),activityWeight:aw,subWeight:sw,created:new Date().toISOString(),photoIds:pendingPhotos.map(p=>p.id),estadoEnvio:'Guardado localmente'};
  if(records.some(old=>sig(old)===sig(r)))return showMessage(msg,'err','Registro idéntico ya guardado en este dispositivo. Revísalo en Sincronizar.');
@@ -767,6 +772,7 @@ async function synchronizeToDropbox(){const out=$('syncMsg');if(syncBusy)return;
   if(!villas[r.villa]||villas[r.villa]!==r.tipo||!catalog.some(g=>g[0]===r.actividad&&g[1].includes(r.subactividad)))throw Error('Villa, tipología o partida de '+r.id+' ya no coincide con la Base Maestra vigente.');
   if(normalized(h?.estado)==='completada')throw Error('La partida de villa '+r.villa+' ya consta completada. Se detuvo para evitar doble registro.');
   if(normalized(whole?.estado)==='completada'&&r.subactividad!=='Rastreado / Regleado')throw Error('La actividad '+r.actividad+' de villa '+r.villa+' ya consta COMPLETA. Se detuvo para evitar doble registro.');
+  if(legacyCompletionConflict(r.villa,r.actividad).length)throw Error('La villa '+r.villa+' tiene registros históricos en '+r.actividad+'. Concilia esos trabajos antes de sincronizar nombres nuevos.');
   await stageRecord(r,photos);stagedNow++
  }
  showMessage(out,'info','2/4 · Revisando registros y fotografías ya recibidos en Dropbox…');const staged=await pendingStagedManifests();if(!staged.length){showMessage(out,'ok','No hay registros pendientes de incorporar. Dropbox y la Base Maestra están al día.');return}for(const x of staged)await verifyPhotosForManifest(x.manifest);

@@ -1,7 +1,7 @@
 # ATALÍA — Precio contractual confirmado de antepechos y acabados
 Confirmación del propietario: 28 de septiembre de 2026.
 
-El precio **real contratado es RD$200,000 por villa** para el conjunto de ANTEPECHOS y ACABADOS. No es un ejemplo ni un precio estimado.
+Maestro asignado: **FADELIN**. El Dashboard de cubicaciones debe utilizar exactamente el mismo flujo que los demás maestros: seleccionar maestro y fecha de corte, leer subactividades terminadas del Libro Maestro, contrastar histórico y mostrar partidas/valores, sin exponer los porcentajes del paquete. El acceso del propietario se mantiene y el acceso delegado al iPhone de José sigue en pruebas independientes.\n\nEl precio **real contratado es RD$200,000 por villa** para el conjunto de ANTEPECHOS y ACABADOS. No es un ejemplo ni un precio estimado.
 
 | Partida | Subactividad | % del contrato gris | RD$ por villa |
 |---|---|---:|---:|

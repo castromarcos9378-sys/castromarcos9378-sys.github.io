@@ -1,5 +1,5 @@
 'use strict';
-const {lookupDevice,tokenFromRequest,setNoStore,checkOrigin,deny,parseDevices} = require('./_device_auth');
+const {lookupDevice,tokenFromRequest,setNoStore,checkOrigin,deny,parseDevices} = require('../server/device-auth');
 module.exports = function delegatedStatus(req,res) {
   setNoStore(res);
   if(!checkOrigin(req)) return deny(res,403,'Origen no autorizado');

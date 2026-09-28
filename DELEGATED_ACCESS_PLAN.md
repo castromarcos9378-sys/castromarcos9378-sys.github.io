@@ -7,7 +7,7 @@ Fecha de inicio: 2026-09-28. Objetivo: teléfonos de empresa; propietario mantie
 - El propietario también puede registrar de vez en cuando con su celular.
 - Trabajadores solo usan la aplicación correspondiente a su obra; no deben instalar Dropbox, conocer credenciales de Dropbox ni manipular sus archivos.
 - Acceso individual revocable por dispositivo; eliminar la PWA **no equivale a revocar el acceso**.
-- Entrega deseada antes del 2026-10-03; instalar y probar primero en iPhone (asignación a proyecto pendiente de confirmar).
+- Entrega deseada antes del 2026-10-03; instalar y probar primero en **iPhone asignado a ATALÍA**; Android reservado para **DAOS**.
 
 ## Hallazgos en el código existente
 - Las PWAs de ATALÍA y DAOS tienen manifest, service worker y etiqueta Apple Touch Icon.
@@ -16,7 +16,7 @@ Fecha de inicio: 2026-09-28. Objetivo: teléfonos de empresa; propietario mantie
 - ATALÍA está desplegada mediante un proyecto Vercel con raíz del proyecto `atalia/`; DAOS está en el directorio raíz del repositorio.
 
 ## Arquitectura exigida
-1. PWA de empresa (ATALÍA o DAOS): PIN local para uso cómodo + identidad de dispositivo revocable emitida por el administrador. No contiene tokens ni refresh tokens de Dropbox.
+1. PWA de empresa (ATALÍA o DAOS): PIN local para uso cómodo + identidad de dispositivo revocable emitida por el administrador. Cada autorización se asigna a una persona identificable en el servidor: no inferir quién trabajó solo a partir del teléfono. No contiene tokens ni refresh tokens de Dropbox.
 2. Servidor HTTPS en Vercel: autentica y autoriza dispositivo/proyecto en **cada solicitud**. Lista restringida de endpoints; nunca expone token de Dropbox ni acepta endpoints Dropbox arbitrarios.
 3. El servidor mantiene las credenciales de cada proyecto como secretos separados; valida catálogo, villa, tipos, fechas, identificador idempotente y estado histórico actualizado ANTES de incorporar cualquier registro.
 4. No enviar al dispositivo el Excel íntegro con cubicaciones/información administrativa. Devolver solo estado operativo mínimo: villas/tipos, catálogo y pendientes; las cantidades o pagos se quedan en el servidor/Libro Maestro.
@@ -27,7 +27,7 @@ Fecha de inicio: 2026-09-28. Objetivo: teléfonos de empresa; propietario mantie
 
 ## Secuencia de entrega y seguridad
 - [x] Crear rama aislada sin cambios en producción.
-- [ ] Confirmar si el iPhone se destina a ATALÍA o DAOS.
+- [x] iPhone confirmado para ATALÍA; Android reservado para DAOS.
 - [ ] Desarrollar servidor y pruebas automáticas de aislamiento, duplicados, conflictos, respaldo y archivos Excel.
 - [ ] Conseguir acceso de despliegue y configurar secretos solo por la interfaz segura de Vercel; **nunca en GitHub ni en el chat**.
 - [ ] Publicar entorno de prueba; comprobar que no expone carpetas ajenas, credenciales o datos económicos.
@@ -41,3 +41,10 @@ Fecha de inicio: 2026-09-28. Objetivo: teléfonos de empresa; propietario mantie
 - No reutilizar el PIN como autorización central.
 - No publicar secretos o credenciales.
 - No declarar sistema listo para uso delegado hasta completar las pruebas de aceptación.
+
+## Instalación inicial del iPhone ATALÍA (sin credenciales de Dropbox)
+- Asegurar que el propietario puede desbloquear el iPhone y que tiene Safari, conexión a internet y cámara disponibles.
+- Cuando la versión delegada esté desplegada en URL de prueba HTTPS, abrirla en Safari > Compartir > Añadir a pantalla de inicio > Añadir. No configurar Dropbox OAuth en ese dispositivo.
+- Configurar identidad de dispositivo y responsable autorizados desde el administrador (secretos en Vercel, nunca introducidos en este repositorio).
+- Antes de campo: comprobar desde el iPhone que puede leer únicamente pendientes ATALÍA, guardar foto, sincronizar; dispositivo revocado debe fallar al consultar y escribir.
+- Instalar la app actual de producción antes de que exista la versión delegada serviría solo para visualizar la interfaz y NO para registrar o autorizar Dropbox en teléfono de empresa.

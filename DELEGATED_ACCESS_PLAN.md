@@ -54,3 +54,11 @@ Fecha de inicio: 2026-09-28. Objetivo: teléfonos de empresa; propietario mantie
 - No implementar usuario, operador, cuenta individual, inicio de sesión personal, ni inferir identidad a partir del teléfono.
 - Mantener únicamente identificador técnico revocable del **dispositivo** para que el administrador pueda bloquearlo sin compartir Dropbox.
 - La trazabilidad de obra se conserva en los campos ya existentes; no inventar datos sobre quién registró una actividad.
+
+## Responsabilidad operativa por proyecto (aclaración del propietario)
+- Cada proyecto tiene una persona responsable de utilizar el teléfono empresarial, pero no se requiere inicio de sesión individual ni se verifica la identidad de cada uso.
+- **ATALÍA:** José es el responsable operativo actualmente; el iPhone está destinado al registro de ATALÍA.
+- **DAOS:** Andrés es un ejemplo posible, no una asignación confirmada. El Android se destina al registro de DAOS.
+- Si cambia el responsable, se entrega el teléfono del proyecto al nuevo encargado; no se rehace la aplicación ni se modifica el histórico.
+- La identidad técnica que controla/revoca el servidor corresponde al teléfono y proyecto, no a la persona. No asociar automáticamente cada registro a José/Andrés como autor físico sin pruebas.
+- La identificación del **contratista que ejecutó la actividad** sigue siendo un dato distinto del responsable de manejar el teléfono.

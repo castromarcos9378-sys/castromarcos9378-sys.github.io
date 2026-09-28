@@ -1,5 +1,5 @@
 'use strict';
-const {COOKIE,setNoStore,checkOrigin,deny}=require('./_device_auth');
+const {COOKIE,setNoStore,checkOrigin,deny}=require('../server/device-auth');
 module.exports=function delegatedLogout(req,res){
  setNoStore(res);
  if(!checkOrigin(req))return deny(res,403,'Origen no autorizado');

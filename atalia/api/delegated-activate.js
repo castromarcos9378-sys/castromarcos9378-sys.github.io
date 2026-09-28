@@ -1,6 +1,6 @@
 'use strict';
 // La activación se hace una sola vez desde la PWA de empresa; ningún token Dropbox llega al iPhone.
-const {COOKIE,lookupDevice,setNoStore,checkOrigin,deny,parseDevices}=require('./_device_auth');
+const {COOKIE,lookupDevice,setNoStore,checkOrigin,deny,parseDevices}=require('../server/device-auth');
 module.exports=function delegatedActivate(req,res){
   setNoStore(res);
   if(!checkOrigin(req))return deny(res,403,'Origen no autorizado');

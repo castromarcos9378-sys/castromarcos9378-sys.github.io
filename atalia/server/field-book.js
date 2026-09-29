@@ -186,6 +186,29 @@ function setCell(doc,row,colNo,rowNo,value,style){
  if(typeof value==='number'){c.removeAttribute('t');const v=doc.createElementNS(M,'v');v.appendChild(doc.createTextNode(String(value)));c.appendChild(v);}
  else{c.setAttribute('t','inlineStr');const is=doc.createElementNS(M,'is'),t=doc.createElementNS(M,'t');t.appendChild(doc.createTextNode(String(value??'')));is.appendChild(t);c.appendChild(is);}
 }
+function extendAtaliaFormulaWindows(book,logDoc,bottomRow){
+ // The approved historic workbook already has records beyond row 999.
+ // Keep summary, PENDIENTES and activity calculations covering current AND future rows.
+ const target=Math.max(1500,bottomRow+250);
+ let repaired=0;
+ for(const key of ['registro de obra','resumen','pendientes']){
+  const sh=book.sheets[key];if(!sh)continue;
+  const doc=key==='registro de obra'?logDoc:sh.doc;
+  let changed=false;
+  for(const node of descendants(doc,'f')){
+   const before=String(node.textContent||'');
+   if(key!=='registro de obra'&&!before.includes('Registro de Obra'))continue;
+   const after=before.replace(/(\$[A-Z]{1,3}\$2:\$[A-Z]{1,3}\$)(\d+)/g,(all,range,end)=>{
+    const n=Number(end);
+    // Only the large historic book windows; never extend a narrow local formula or catalog.
+    return n>=900&&n<target?range+target:all;
+   });
+   if(after!==before){node.textContent=after;changed=true;repaired++;}
+  }
+  if(changed&&key!=='registro de obra')save(book.z,sh.path,doc);
+ }
+ return repaired;
+}
 function write(bytes,project,record,who){
  const {b,info}=readBook(bytes,project);
  const r=record;const marker=project==='atalia'?'ATALIA-':'';
@@ -230,6 +253,7 @@ function write(bytes,project,record,who){
  put(auditCol,who.name);
  const dimension=descendants(doc,'dimension')[0],old=dimension?.getAttribute('ref');
  if(old){const m=/^([A-Z]+\d+:)?([A-Z]+)(\d+)$/.exec(old);if(m&&Number(m[3])<no)dimension.setAttribute('ref',(m[1]||'')+m[2]+no);}
+ if(project==='atalia')extendAtaliaFormulaWindows(b,doc,no);
  save(b.z,path,doc);
  for(const [name,compressed] of Object.entries(b.z)){
   if(!/^xl\/tables\/table\d+\.xml$/i.test(name))continue;

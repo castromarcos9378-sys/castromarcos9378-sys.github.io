@@ -78,3 +78,10 @@ test('Libro DAOS sintético: 45 villas, Andrés, escritura confirmada sin duplic
  assert.equal(book.write(result.bytes,'daos',record,user).duplicate,true);
  assert.match(new TextDecoder().decode(z.unzipSync(new Uint8Array(result.bytes))['xl/worksheets/sheet1.xml']),/Arq. Andrés Mora/);
 });
+
+test('Permisos: un usuario de DAOS no consulta las rutas de Atalía',()=>{
+ const store=require('../atalia/server/field-dropbox');
+ assert.throws(()=>store.assertPath('atalia','/Daos Villas/V07.xlsx'));
+ assert.throws(()=>store.assertPath('daos','/Atalía Villa/master.xlsx'));
+ assert.equal(store.assertPath('atalia','/Atalía Villa/REGISTROS_CAMPO_DELEGADOS/a.json'),'/Atalía Villa/REGISTROS_CAMPO_DELEGADOS/a.json');
+});

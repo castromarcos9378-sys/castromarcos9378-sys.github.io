@@ -3,11 +3,11 @@
 Fecha de inicio: 2026-09-28. Objetivo: teléfonos de empresa; propietario mantiene control del Dropbox de trabajo. No alterar las aplicaciones de producción ni los Libros Maestros durante el desarrollo.
 
 ## Decisiones confirmadas
-- Dos aplicaciones independientes y dos teléfonos de empresa (uno iPhone, uno Android).
+- Dos aplicaciones independientes y dos teléfonos de empresa (ambos iPhone).
 - El propietario también puede registrar de vez en cuando con su celular.
 - Trabajadores solo usan la aplicación correspondiente a su obra; no deben instalar Dropbox, conocer credenciales de Dropbox ni manipular sus archivos.
 - Acceso revocable por dispositivo/proyecto, sin cuentas individuales de trabajadores; eliminar la PWA **no equivale a revocar el acceso**.
-- Entrega deseada antes del 2026-10-03; instalar y probar primero en **iPhone asignado a ATALÍA**; Android reservado para **DAOS**.
+- Entrega deseada antes del 2026-10-03; instalar y probar primero en **iPhone asignado a ATALÍA (José)** y después en **iPhone asignado a DAOS (Andrés)**.
 
 ## Hallazgos en el código existente
 - Las PWAs de ATALÍA y DAOS tienen manifest, service worker y etiqueta Apple Touch Icon.
@@ -27,17 +27,17 @@ Fecha de inicio: 2026-09-28. Objetivo: teléfonos de empresa; propietario mantie
 
 ## Secuencia de entrega y seguridad
 - [x] Crear rama aislada sin cambios en producción.
-- [x] iPhone confirmado para ATALÍA; Android reservado para DAOS.
+- [x] iPhone confirmado para ATALÍA (José); iPhone confirmado para DAOS (Andrés).
 - [ ] Desarrollar servidor y pruebas automáticas de aislamiento, duplicados, conflictos, respaldo y archivos Excel.
 - [ ] Conseguir acceso de despliegue y configurar secretos solo por la interfaz segura de Vercel; **nunca en GitHub ni en el chat**.
 - [ ] Publicar entorno de prueba; comprobar que no expone carpetas ajenas, credenciales o datos económicos.
 - [ ] Probar en iPhone mediante Safari > Compartir > Añadir a pantalla de inicio, con identidad delegada (no Dropbox personal).
 - [ ] Probar registro + foto, sin conexión, reintento, dos dispositivos y revocación.
 - [ ] Migrar/sustituir únicamente después de pruebas satisfactorias; preservar alternativa productiva anterior para reversión.
-- [ ] Hacer lo mismo con el Android del segundo proyecto.
+- [ ] Hacer lo mismo con el iPhone de DAOS (Andrés), en su aplicación independiente.
 
 ## No hacer
-- No instalar ni autorizar tu Dropbox personal en el iPhone/Android de la empresa.
+- No instalar ni autorizar tu Dropbox personal en el iPhones de la empresa.
 - No reutilizar el PIN como autorización central.
 - No publicar secretos o credenciales.
 - No declarar sistema listo para uso delegado hasta completar las pruebas de aceptación.
@@ -58,7 +58,7 @@ Fecha de inicio: 2026-09-28. Objetivo: teléfonos de empresa; propietario mantie
 ## Responsabilidad operativa por proyecto (aclaración del propietario)
 - Cada proyecto tiene una persona responsable de utilizar el teléfono empresarial, pero no se requiere inicio de sesión individual ni se verifica la identidad de cada uso.
 - **ATALÍA:** José es el responsable operativo actualmente; el iPhone está destinado al registro de ATALÍA.
-- **DAOS:** Andrés es un ejemplo posible, no una asignación confirmada. El Android se destina al registro de DAOS.
+- **DAOS:** Andrés es el responsable operativo confirmado; el iPhone se destina al registro de DAOS.
 - Si cambia el responsable, se entrega el teléfono del proyecto al nuevo encargado; no se rehace la aplicación ni se modifica el histórico.
 - La identidad técnica que controla/revoca el servidor corresponde al teléfono y proyecto, no a la persona. No asociar automáticamente cada registro a José/Andrés como autor físico sin pruebas.
 - La identificación del **contratista que ejecutó la actividad** sigue siendo un dato distinto del responsable de manejar el teléfono.
@@ -73,3 +73,9 @@ Fecha de inicio: 2026-09-28. Objetivo: teléfonos de empresa; propietario mantie
 - [ ] Desarrollar referencia operativa y sincronización servidor/Dropbox, con pruebas de historial, copias, fotos, idempotencia y conflictos antes de instalar la versión productiva delegada.
 - [ ] El propietario debe configurar los secretos en Vercel a través de su propia sesión; nunca pasarlos en chat ni publicarlos en GitHub.
 - [ ] Verificar el iPhone de José físicamente y hacer las pruebas en campo.
+
+## Confirmación de equipos (28/09/2026)
+- Ambos teléfonos de empresa son **iPhone**. José utilizará el de ATALÍA y Andrés el de DAOS.
+- La aplicación de cada obra permanece totalmente independiente; ambas requieren pruebas de PWA con Safari y acceso delegado específico de su dispositivo/proyecto.
+- El propietario conserva su propio acceso para registrar en las obras cuando sea necesario; no se debe reemplazar por el acceso limitado de los teléfonos de empresa.
+- Los Dashboards aprobados no equivalen todavía a aplicativos delegados probados en ambos iPhone; no autorizar Dropbox personal en ellos.

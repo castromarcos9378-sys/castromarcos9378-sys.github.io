@@ -1,0 +1,20 @@
+{
+  "id": "./",
+  "name": "DAOS Campo · acceso personal",
+  "short_name": "DAOS Campo",
+  "description": "Acceso personal a registro de campo DAOS desde iPhone",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#132b48",
+  "theme_color": "#132b48",
+  "icons": [
+    {
+      "src": "../daos-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

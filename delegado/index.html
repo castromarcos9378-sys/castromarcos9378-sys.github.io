@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#132b48"><meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="DAOS Campo">
+<link rel="manifest" href="./manifest.webmanifest"><link rel="apple-touch-icon" href="../daos-icon.svg">
+<title>DAOS · Acceso personal iPhone</title>
+<style>
+*{box-sizing:border-box}html{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#152b43;background:#f3f6fb}body{margin:0}
+header{padding:calc(25px + env(safe-area-inset-top)) 20px 25px;background:#132b48;color:#fff}
+header small{font-weight:750;letter-spacing:.16em;color:#cae1ff}
+header h1{font-size:31px;margin:9px 0 4px}
+main{max-width:580px;margin:0 auto;padding:23px 16px calc(32px + env(safe-area-inset-bottom))}
+section{background:#fff;border:1px solid #dce5f1;border-radius:20px;padding:22px;margin-bottom:17px;box-shadow:0 8px 20px #173e6510}
+h2{font-size:20px;margin:0 0 11px}p{font-size:15px;line-height:1.55;color:#3e536e}
+.note{border-radius:13px;background:#eaf3ff;color:#26496a;padding:13px 15px}
+button{border:0;border-radius:12px;width:100%;background:#174a95;color:#fff;padding:15px;font-size:16px;min-height:50px;font-weight:750;cursor:pointer}
+small{font-size:12px}.muted{color:#65768b}
+</style></head><body>
+<header><small>ACCESO PERSONAL · DAOS</small><h1>Registro de obra</h1><p style="color:#deebfa;margin:8px 0 0">Preparación para el iPhone del responsable de campo</p></header>
+<main><section>
+<h2>Aplicativo para iPhone</h2>
+<p class="note" id="state" role="status" aria-live="polite">Esta versión es de preparación. La autenticación personal y la sincronización segura aún no están habilitadas. No utilices esta pantalla para registrar actividades reales.</p>
+<button type="button" id="check">Comprobar conexión</button>
+<p class="muted">La aplicación utiliza el teléfono personal sin acceso a fotografías no seleccionadas ni a otras aplicaciones. El propietario conservará el control de los permisos y del registro de obra.</p>
+</section><section><h2>Instalación</h2>
+<p>Cuando el administrador habilite la versión operativa, abre su dirección en Safari, pulsa Compartir y elige «Añadir a pantalla de inicio». Se instala una sola vez; las siguientes versiones se actualizarán desde el mismo icono.</p>
+</section></main>
+<script>
+'use strict';
+const state=document.getElementById('state');
+document.getElementById('check').onclick=()=>{state.textContent=navigator.onLine?'Conexión a internet disponible. Autenticación personal y sincronización aún no habilitadas.':'Sin conexión. No se enviarán registros. La autenticación y la sincronización siguen deshabilitadas.'};
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(()=>{});
+</script>
+</body></html>

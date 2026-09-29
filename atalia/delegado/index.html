@@ -7,7 +7,7 @@
  <meta name="apple-mobile-web-app-capable" content="yes">
  <meta name="apple-mobile-web-app-title" content="ATALÍA Campo">
  <meta name="apple-mobile-web-app-status-bar-style" content="default">
- <title>ATALÍA · iPhone de obra</title>
+ <title>ATALÍA · Acceso personal iPhone</title>
  <link rel="manifest" href="./manifest.webmanifest">
  <link rel="apple-touch-icon" href="../atalia-icon.svg">
  <style>
@@ -34,28 +34,28 @@
 </head>
 <body>
  <header>
-  <small>DISPOSITIVO DE EMPRESA · ATALÍA</small>
+  <small>ACCESO PERSONAL · ATALÍA</small>
   <h1>Registro de obra</h1>
  </header>
  <main>
   <section>
    <h2>Estado del iPhone</h2>
    <p class="notice" id="status" role="status" aria-live="polite">Comprobando autorización…</p>
-   <p class="muted">Este iPhone pertenece al proyecto ATALÍA. Quien lo utilice es responsable de los registros realizados desde el dispositivo.</p>
+   <p class="muted">Esta aplicación utiliza tu iPhone personal. Solo podrá consultar y enviar los datos del proyecto ATALÍA cuando la autorización personal esté habilitada.</p>
    <button type="button" id="check">Comprobar conexión</button>
   </section>
   <section id="setup" hidden>
    <h2>Activación inicial</h2>
-   <p>Solo el administrador puede activar el iPhone. No se necesita instalar Dropbox ni introducir sus credenciales aquí.</p>
+   <p>El administrador autoriza este dispositivo. Después se verificará tu identidad personal para atribuir cada registro al usuario correcto. No se necesita instalar Dropbox.</p>
    <label for="token">Código de activación del dispositivo</label>
    <input id="token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="text" placeholder="Código proporcionado por el administrador">
    <button id="activate" type="button">Activar este iPhone</button>
    <p class="muted">No compartas este código por WhatsApp ni lo envíes a ChatGPT.</p>
   </section>
   <section id="pending" hidden>
-   <h2>Próximamente: registro operativo</h2>
-   <p>El iPhone está identificado. La sincronización delegada y la protección de la Base Maestra siguen en pruebas. Todavía no registres actividades reales aquí.</p>
-   <button id="signout" type="button">Cerrar sesión del dispositivo</button>
+   <h2>Registro personal en preparación</h2>
+   <p>La activación del iPhone y el acceso personal son pasos distintos. La sincronización delegada sigue en pruebas. Todavía no registres actividades reales aquí.</p>
+   <button id="signout" type="button">Cerrar la sesión del dispositivo</button>
   </section>
  </main>
  <script>
@@ -67,7 +67,7 @@
     const res=await fetch('../api/delegated-status',{cache:'no-store',credentials:'same-origin'});
     const json=await res.json();
     setup.hidden=!!json.active;pending.hidden=!json.active;
-    if(json.active)show('iPhone autorizado para ATALÍA'+(json.syncReady?'':' · sincronización aún no habilitada'),json.syncReady?'good':'');
+    if(json.active)show('iPhone autorizado para ATALÍA'+(json.syncReady?'':' · acceso personal y sincronización aún no habilitados'),json.syncReady?'good':'');
     else show(res.status===503?'El servidor todavía no está configurado por el administrador.':'Este iPhone necesita activación del administrador.',res.status===503?'':'error');
    }catch(_){setup.hidden=true;pending.hidden=true;show('No se pudo contactar al servidor. Revisa la conexión a internet.','error')}
  }
@@ -88,6 +88,7 @@
   await refresh()
  };
  refresh();
+ if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(()=>{});
  </script>
 </body>
 </html>

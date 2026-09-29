@@ -955,6 +955,10 @@ async function updateInstallPwa(){
   return
  }
  installPanels.forEach(p=>p.classList.remove('hidden'));
+ if(/iP(?:hone|ad|od)/i.test(navigator.userAgent)){
+  setInstallUi('📱 iPhone: Safari → Compartir','En Safari, pulsa Compartir y después «Añadir a pantalla de inicio». Solo necesitas hacerlo una vez; las siguientes versiones se actualizan automáticamente.',true);
+  return
+ }
  if(pwaInstallPrompt){
   setInstallUi('📲 Instalar ATALÍA','Instala ATALÍA como aplicación independiente. Tendrá su propio icono y abrirá sin la barra de Chrome.',false);
   return

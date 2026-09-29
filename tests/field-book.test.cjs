@@ -52,3 +52,25 @@ test('Base Atalía sintética: 52 villas, 7 actividades, auditoría e idempotenc
  assert.equal(new TextDecoder().decode(files['xl/styles.xml']),'UNCHANGED');
  assert.match(new TextDecoder().decode(files['xl/worksheets/sheet1.xml']),/Ing. José Reynoso/);
 });
+
+test('Libro DAOS sintético: 45 villas, Andrés, escritura confirmada sin duplicados',()=>{
+ const nums=Array.from({length:49},(_,i)=>i+1).filter(n=>![3,35,36,47].includes(n));
+ const villas=[row(3,{A:'Villa',B:'Tipo',C:'Actividad',D:'Preliminares',E:'Cimentaciones',F:'1er Nivel',G:'2do Nivel',H:'Cubierta',I:'Acabados'}),
+ ...nums.map((n,i)=>row(i+4,{A:n,B:'Esmeralda',C:'Sin iniciar',D:'Sin dato',E:'Sin dato',F:'Sin dato',G:'Sin dato',H:'Sin dato',I:'Sin dato'}))];
+ const groups=[['Trabajos preliminares',1],['Cimentaciones',6],['1er Nivel',7],['2do Nivel',6],['Cubierta',3],['Acabados',9],['Obras exteriores',1]];
+ let n=4;const cat=[row(3,{A:'Orden',B:'Actividad',C:'Subactividad'})];
+ groups.forEach(([a,num],i)=>{for(let x=0;x<num;x++)cat.push(row(n++,{A:i+1,B:a,C:x===0?'Limpieza y replanteo':'Partida '+i+'-'+x}));});
+ const log=[row(3,{A:'ID',B:'Tipo',C:'Villa',D:'Actividad',E:'Subactividad',F:'Estado',G:'Fecha inicio',H:'Fecha terminación',I:'Antes',J:'Observación',K:'Origen',L:'Referencia',M:'Clave',N:'Vigente'}),
+ row(4,{A:1,B:'Esmeralda',C:1,D:'Sin iniciar',E:'Estado del levantamiento',J:'Histórico intacto',K:'Referencia',L:'Levantamiento',N:1})];
+ const original=zipSheets({'LIBRO DE OBRA':sheet(log),'VILLAS':sheet(villas),'CATALOGO':sheet(cat)});
+ const info=book.readBook(original,'daos').info;
+ assert.equal(Object.keys(info.villas).length,45);assert.ok([3,35,36,47].every(n=>!info.villas[n]));
+ assert.equal(info.catalog.reduce((a,g)=>a+g[1].length,0),33);
+ const record={id:'12345678-1234-4234-8234-123456789abc',project:'DAOS',villa:6,tipo:'Esmeralda',
+ actividad:'Trabajos preliminares',subactividad:'Limpieza y replanteo',estado:'Realizado',
+ fechaInicio:'2026-09-28',fechaFin:'2026-09-28',observacion:'Verificado'};
+ const user={id:'andres-mora',name:'Arq. Andrés Mora'},result=book.write(original,'daos',record,user);
+ assert.equal(result.added,true);assert.equal(book.readBook(result.bytes,'daos').info.ids.has(record.id),true);
+ assert.equal(book.write(result.bytes,'daos',record,user).duplicate,true);
+ assert.match(new TextDecoder().decode(z.unzipSync(new Uint8Array(result.bytes))['xl/worksheets/sheet1.xml']),/Arq. Andrés Mora/);
+});

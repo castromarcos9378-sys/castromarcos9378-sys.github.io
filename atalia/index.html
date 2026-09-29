@@ -411,7 +411,7 @@ function parseAtaliaCatalog(rows){
   }
  }
  const catalog=Object.keys(activityWeights).map(a=>[a,a==='CONEXIONES EXTERNAS'?[...(subs[a]||[])]:['COMPLETA',...(subs[a]||[])]]);
- if(catalog.length!==7||!catalog.every(g=>g[1].length>=(g[0]==='CONEXIONES EXTERNAS'?1:3))||!catalog.some(g=>g[0]==='CONEXIONES EXTERNAS'&&g[1].includes('Potable')&&!g[1].includes('Sanitaria')))throw Error('Este aplicativo requiere Base Maestra V34 o posterior, con potable externa habilitada y sanitaria reservada.');
+ if(![6,7].includes(catalog.length)||!catalog.every(g=>g[1].length>=(g[0]==='CONEXIONES EXTERNAS'?1:3))||(catalog.length===7&&!catalog.some(g=>g[0]==='CONEXIONES EXTERNAS'&&g[1].includes('Potable')&&!g[1].includes('Sanitaria'))))throw Error('El catálogo de la Base Maestra no es compatible. Se admite la V30 durante la transición y V34 con conexiones externas habilitadas.');
  return {catalog,activityWeights,subWeights}
 }
 function sourceFromSheets(sheets){

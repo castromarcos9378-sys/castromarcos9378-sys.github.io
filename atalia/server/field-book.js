@@ -188,8 +188,8 @@ function setCell(doc,row,colNo,rowNo,value,style){
 }
 function write(bytes,project,record,who){
  const {b,info}=readBook(bytes,project);
- const r=record;const marker=project==='atalia'?'ATALIA-':'DAOS-';
- if(typeof r?.id!=='string'||!r.id.startsWith(marker)||r.id.length>100||!/^[a-zA-Z0-9_-]+$/.test(r.id))err('Identificador de registro inválido');
+ const r=record;const marker=project==='atalia'?'ATALIA-':'';
+ if(typeof r?.id!=='string'||!r.id.startsWith(marker)||project==='daos'&&!/^(?:DAOS-)?[a-f0-9-]{30,48}$/i.test(r.id)||r.id.length>100||!/^[a-zA-Z0-9_-]+$/.test(r.id))err('Identificador de registro inválido');
  if(info.ids.has(r.id))return {bytes:Buffer.from(bytes),added:false,duplicate:true,id:r.id};
  const fields=validated(r,info);
  const {doc,path}=b.sheets[lower(info.sheetName)],all=descendants(doc,'row'),data=descendants(doc,'sheetData')[0];

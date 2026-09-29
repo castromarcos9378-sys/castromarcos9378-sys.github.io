@@ -25,3 +25,30 @@ function zipSheets(sheets){
  names.forEach((name,i)=>{p['xl/worksheets/sheet'+(i+1)+'.xml']=sheets[name]});
  return Buffer.from(z.zipSync(Object.fromEntries(Object.entries(p).map(([k,v])=>[k,new TextEncoder().encode(v)]))));
 }
+
+test('Base Atalía sintética: 52 villas, 7 actividades, auditoría e idempotencia',()=>{
+ const nums=[...Array.from({length:18},(_,i)=>i+7),...Array.from({length:34},(_,i)=>i+107)];
+ const summary=[row(3,{A:'Villa',B:'Tipo'}),...nums.map((n,i)=>row(i+4,{A:n,B:'C'}))];
+ const acts=['PLATEA','NIVEL 1','NIVEL 2','ESCALERAS','ANTEPECHOS','ACABADOS','CONEXIONES EXTERNAS'];
+ const cat=[row(1,{E:'ACTIVIDADES',F:'PORCENTAJE ACTIVIDAD',Q:'ACTIVIDAD',R:'SUBACTIVIDAD',S:'PORCENTAJE'})];
+ acts.forEach((a,i)=>cat.push(row(i+2,{E:a,F:i===6?0:.10,Q:a,
+ R:a==='CONEXIONES EXTERNAS'?'Potable':a==='ANTEPECHOS'?'Colocación de bloques en losa de techo':'Paso inicial',S:i===6?0:.02})));
+ cat.push(row(10,{Q:'ANTEPECHOS',R:'Colocación de bloques en balcón (Nivel 1)',S:.005}));
+ cat.push(row(11,{Q:'ANTEPECHOS',R:'Colocación de bloques en escaleras y ventanas',S:.005}));
+ const reg=[row(1,{A:'ID Registro',B:'Villa',C:'Tipo de Villa',D:'Actividad General',E:'Subactividad',F:'Contratista',G:'Fecha inicio',H:'Fecha terminación',I:'Estado',J:'Porcentaje actividad',K:'Porcentaje subactividad',L:'Avance registro',M:'Observaciones'}),
+ row(2,{A:1,B:7,C:'C',D:'PLATEA',E:'COMPLETA',F:'ECM',G:46290,H:46290,I:'Completada',J:.1,K:.1,L:.1,M:'Histórico intacto'})];
+ const original=zipSheets({'Registro de Obra':sheet(reg),'Catálogos':sheet(cat),'Resumen':sheet(summary)});
+ const info=book.readBook(original,'atalia').info;
+ assert.equal(Object.keys(info.villas).length,52);assert.equal(info.catalog.length,7);
+ assert.deepEqual(info.catalog.find(g=>g[0]==='CONEXIONES EXTERNAS')[1],['Potable']);
+ const record={id:'ATALIA-12345678-1234-4234-8234-123456789abc',project:'ATALIA',villa:8,tipo:'C',
+ actividad:'ANTEPECHOS',subactividad:'Colocación de bloques en losa de techo',estado:'Completada',
+ fechaInicio:'2026-09-28',fechaFin:'2026-09-28',observacion:'Comprobado'};
+ const user={id:'jose-reynoso',name:'Ing. José Reynoso'};
+ const result=book.write(original,'atalia',record,user);
+ assert.equal(result.added,true);assert.equal(book.readBook(result.bytes,'atalia').info.ids.has(record.id),true);
+ assert.equal(book.write(result.bytes,'atalia',record,user).duplicate,true);
+ const files=z.unzipSync(new Uint8Array(result.bytes));
+ assert.equal(new TextDecoder().decode(files['xl/styles.xml']),'UNCHANGED');
+ assert.match(new TextDecoder().decode(files['xl/worksheets/sheet1.xml']),/Ing. José Reynoso/);
+});

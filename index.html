@@ -750,6 +750,9 @@ function updateInstallPwa(){
  if(!installBtn||!installHint)return;
  const standalone=window.matchMedia?.('(display-mode: standalone)').matches||window.navigator.standalone===true;
  if(standalone){installBtn.disabled=true;installBtn.textContent='DAOS ya está instalado';installHint.textContent='Esta instalación se está ejecutando como aplicación independiente.';return}
+ if(/iP(?:hone|ad|od)/i.test(navigator.userAgent)){
+  installBtn.disabled=true;installBtn.textContent='Instalar desde Safari';installHint.textContent='En Safari, toca Compartir → Añadir a pantalla de inicio. Se instala solo una vez y después recibe actualizaciones.';return
+ }
  if(pwaInstallPrompt){installBtn.disabled=false;installBtn.textContent='Instalar DAOS';installHint.textContent='Instala DAOS en la pantalla de inicio para abrirlo como una aplicación.';return}
  installBtn.disabled=true;installBtn.textContent='Instalación disponible al publicar por HTTPS';
  installHint.textContent='La PWA está preparada. El navegador habilitará la instalación cuando estos archivos se publiquen en una dirección HTTPS.';

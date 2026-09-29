@@ -2,7 +2,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const read=p=>fs.readFileSync(p,'utf8');
 function inlineScripts(html){return [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)].filter(m=>!/(?:application\/json|text\/plain)/i.test(m[1])).map(m=>m[2]).filter(x=>x.trim())}
-for(const path of ['atalia/index.html','index.html','atalia/delegado/index.html','delegado/index.html']){
+for(const path of ['atalia/index.html','index.html','atalia/delegado/index.html','delegado/index.html','atalia/jose/index.html','atalia/daos/andres/index.html']){
  test('Validar JavaScript del aplicativo '+path,()=>{
    const scripts=inlineScripts(read(path));assert(scripts.length>0);
    scripts.forEach(x=>new vm.Script(x,{filename:path}));
@@ -36,7 +36,9 @@ test('Los nuevos registros ATALÍA mantienen histórico y avance separado',()=>{
 });
 test('DAOS instala sin cuenta Dropbox en la pantalla de actualización',()=>{
  const app=read('index.html');assert.match(app,/configureInPlaceUpdates/);
- assert.match(app,/V10\.2/);
+ assert.match(app,/V10\.3/);
 });
 
 test('Los accesos iPhone de terceros no comparten credenciales ni envían datos sin servidor',()=>{for(const path of ['atalia/delegado/index.html','delegado/index.html']){const html=read(path);assert.doesNotMatch(html,/refreshToken|dropboxAuth|api\.dropboxapi\.com/);assert.match(html,/sincronización|sincronizaci[oó]n/i);}});
+
+test('Los iPhone personales incorporan identidad y conexión delegada sin exponer Dropbox',()=>{for(const [path,who] of [['atalia/jose/index.html','jose-reynoso'],['atalia/daos/andres/index.html','andres-mora']]){const app=read(path);assert.match(app,new RegExp(who));assert.match(app,/async function fieldSync\(\)/);assert.match(app,/getDropboxToken\(\)\{throw Error/);assert.match(app,/fieldAuthenticated=false/);assert.match(app,/\/api\/field/);}});

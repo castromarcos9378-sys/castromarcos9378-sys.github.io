@@ -1,6 +1,6 @@
 {
   "id": "./",
-  "name": "ATALÍA Campo · iPhone de la empresa",
+  "name": "ATALÍA Campo · acceso personal",
   "short_name": "ATALÍA Campo",
   "start_url": "./index.html",
   "scope": "./",
@@ -15,5 +15,6 @@
       "type": "image/svg+xml",
       "purpose": "any"
     }
-  ]
+  ],
+  "description": "Acceso autorizado a registros de campo de ATALÍA desde iPhone personal"
 }

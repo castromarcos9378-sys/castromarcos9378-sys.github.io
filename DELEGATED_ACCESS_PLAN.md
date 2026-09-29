@@ -100,3 +100,10 @@ Fecha de inicio: 2026-09-28. Objetivo: acceso delegado en teléfonos personales 
 - Proteger contraseñas con hash resistente en backend, no guardarlas en claro ni enviarlas a GitHub o chat. Sesiones limitadas y revocables; contraseña y dispositivo se revocan por separado. No incluir tokens de Dropbox ni archivos administrativos completos en los iPhone personales.
 - Para compatibilidad, agregar la atribución a **futuros registros** mediante extensión explícita comprobada del Libro Maestro; no reemplazar ni repoblar históricos, no cambiar hojas ni fórmulas de producción sin aprobación y pruebas.
 - Antes de desplegar, probar cuentas y permisos cruzados, reinicio/cambio de clave, pérdida/revocación de teléfono, registro con fotos sin conexión, deduplicación y el administrador registrando en ambos proyectos.
+
+## Nombres oficiales visibles y de auditoría (confirmados por Marcos)
+- **Ing. Marcos Castro** — administrador, acceso a ATALÍA y DAOS.
+- **Ing. José Reynoso** — acceso a registros de ATALÍA.
+- **Arq. Andrés Mora** — acceso a registros de DAOS.
+- Mostrar exactamente estos nombres y títulos en la aplicación tras autenticarse y en el campo de auditoría `registrado_por` de **registros nuevos**. El servidor asigna el nombre a partir de la cuenta autenticada; no se permite edición manual del autor.
+- Separar esta identificación de los campos de contratista (ECM cuando corresponda) y maestro ejecutor. Preservar intacto el historial anterior y no reatribuir registros pasados.

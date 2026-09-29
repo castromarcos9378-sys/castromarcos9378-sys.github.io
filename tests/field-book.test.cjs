@@ -36,7 +36,8 @@ test('Base Atalía sintética: 52 villas, 7 actividades, auditoría e idempotenc
  cat.push(row(10,{Q:'ANTEPECHOS',R:'Colocación de bloques en balcón (Nivel 1)',S:.005}));
  cat.push(row(11,{Q:'ANTEPECHOS',R:'Colocación de bloques en escaleras y ventanas',S:.005}));
  const reg=[row(1,{A:'ID Registro',B:'Villa',C:'Tipo de Villa',D:'Actividad General',E:'Subactividad',F:'Contratista',G:'Fecha inicio',H:'Fecha terminación',I:'Estado',J:'Porcentaje actividad',K:'Porcentaje subactividad',L:'Avance registro',M:'Observaciones'}),
- row(2,{A:1,B:7,C:'C',D:'PLATEA',E:'COMPLETA',F:'ECM',G:46290,H:46290,I:'Completada',J:.1,K:.1,L:.1,M:'Histórico intacto'})];
+ row(2,{A:1,B:7,C:'C',D:'PLATEA',E:'COMPLETA',F:'ECM',G:46290,H:46290,I:'Completada',J:.1,K:.1,L:.1,M:'Histórico intacto'}),
+ row(3,{A:2,B:7,C:'C',D:'ANTEPECHOS',E:'Colocación de bloques perimetrales',F:'ECM',G:46290,H:46290,I:'Completada',J:.03,K:.015,L:.015,M:'Antepecho histórico'})];
  const computedSummary=sheet(summary).replace('</sheetData>','<row r="99"><c r="C99"><f>COUNTIF(&apos;Registro de Obra&apos;!$B$2:$B$999,7)</f></c></row></sheetData>');
  const original=zipSheets({'Registro de Obra':sheet(reg),'Catálogos':sheet(cat),'Resumen':computedSummary});
  const info=book.readBook(original,'atalia').info;
@@ -49,6 +50,7 @@ test('Base Atalía sintética: 52 villas, 7 actividades, auditoría e idempotenc
  const result=book.write(original,'atalia',record,user);
  assert.equal(result.added,true);assert.equal(book.readBook(result.bytes,'atalia').info.ids.has(record.id),true);
  assert.equal(book.write(result.bytes,'atalia',record,user).duplicate,true);
+ assert.throws(()=>book.write(original,'atalia',{...record,id:'ATALIA-22345678-1234-4234-8234-123456789abc',villa:7},user),/histórico|historial|completado/i);
  const files=z.unzipSync(new Uint8Array(result.bytes));
  assert.equal(new TextDecoder().decode(files['xl/styles.xml']),'UNCHANGED');
  assert.match(new TextDecoder().decode(files['xl/worksheets/sheet1.xml']),/Ing. José Reynoso/);

@@ -37,7 +37,8 @@ test('Base Atalía sintética: 52 villas, 7 actividades, auditoría e idempotenc
  cat.push(row(11,{Q:'ANTEPECHOS',R:'Colocación de bloques en escaleras y ventanas',S:.005}));
  const reg=[row(1,{A:'ID Registro',B:'Villa',C:'Tipo de Villa',D:'Actividad General',E:'Subactividad',F:'Contratista',G:'Fecha inicio',H:'Fecha terminación',I:'Estado',J:'Porcentaje actividad',K:'Porcentaje subactividad',L:'Avance registro',M:'Observaciones'}),
  row(2,{A:1,B:7,C:'C',D:'PLATEA',E:'COMPLETA',F:'ECM',G:46290,H:46290,I:'Completada',J:.1,K:.1,L:.1,M:'Histórico intacto'})];
- const original=zipSheets({'Registro de Obra':sheet(reg),'Catálogos':sheet(cat),'Resumen':sheet(summary)});
+ const computedSummary=sheet(summary).replace('</sheetData>','<row r="99"><c r="C99"><f>COUNTIF(&apos;Registro de Obra&apos;!$B$2:$B$999,7)</f></c></row></sheetData>');
+ const original=zipSheets({'Registro de Obra':sheet(reg),'Catálogos':sheet(cat),'Resumen':computedSummary});
  const info=book.readBook(original,'atalia').info;
  assert.equal(Object.keys(info.villas).length,52);assert.equal(info.catalog.length,7);
  assert.deepEqual(info.catalog.find(g=>g[0]==='CONEXIONES EXTERNAS')[1],['Potable']);
@@ -51,6 +52,7 @@ test('Base Atalía sintética: 52 villas, 7 actividades, auditoría e idempotenc
  const files=z.unzipSync(new Uint8Array(result.bytes));
  assert.equal(new TextDecoder().decode(files['xl/styles.xml']),'UNCHANGED');
  assert.match(new TextDecoder().decode(files['xl/worksheets/sheet1.xml']),/Ing. José Reynoso/);
+ assert.match(new TextDecoder().decode(files['xl/worksheets/sheet3.xml']),/\$B\$2:\$B\$1500/);
 });
 
 test('Libro DAOS sintético: 45 villas, Andrés, escritura confirmada sin duplicados',()=>{

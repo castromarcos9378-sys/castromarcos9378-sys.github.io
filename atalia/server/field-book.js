@@ -147,11 +147,17 @@ function readBook(bytes,project){
  const b=books(unzip(bytes));return {b,info:project==='atalia'?ataliaInfo(b):project==='daos'?daosInfo(b):err('Proyecto inválido',403)};
 }
 function publicReference(info,filename){
- const fields=['villas','catalog','history','rows'];
+ const fields=['villas','catalog','rows'];
  if(info.project==='atalia')fields.push('activityWeights','subWeights','pendingViews');
  else fields.push('stageSummary','pendingViews','hasPendingSheet');
  const out={filename,loaded:new Date().toISOString()};
  for(const field of fields)out[field]=info[field]??(field==='pendingViews'?[]:null);
+ // Personal devices only need status and provenance to prevent duplicate work.
+ // Never transmit free-text historical notes, financing or the complete workbook.
+ out.history=(info.history||[]).map(([key,h])=>[key,{
+  id:h.id,estado:h.estado,origen:h.origen||'',
+  contratista:h.contratista||'',fechaInicio:h.fechaInicio||'',fechaFin:h.fechaFin||''
+ }]);
  return out;
 }
 function validated(record,info){

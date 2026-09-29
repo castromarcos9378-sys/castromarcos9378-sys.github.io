@@ -10,8 +10,10 @@ function err(message,status=422){throw Object.assign(Error(message),{status});}
 const lower=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
 function children(parent,name){return Array.from(parent?.childNodes||[]).filter(x=>x.nodeType===1&&(!name||x.localName===name));}
 function descendants(parent,name){return Array.from(parent?.getElementsByTagNameNS?.(M,name)||[]);}
-function xml(buf){const p=new DOMParser({errorHandler:{fatalError:e=>{throw Error(String(e))},error:e=>{throw Error(String(e))}}});
- return p.parseFromString(textDecoder.decode(buf),'application/xml');}
+function xml(buf){const p=new DOMParser();
+ const doc=p.parseFromString(textDecoder.decode(buf),'application/xml');
+ if(doc.getElementsByTagName('parsererror').length)err('XML del Libro Maestro inválido');
+ return doc;}
 function unzip(buf){try{return unzipSync(new Uint8Array(buf));}catch{err('El Libro Maestro no es un XLSX válido');}}
 function file(z,name){if(!z[name])err('Falta componente XLSX: '+name);return xml(z[name]);}
 function save(z,name,doc){z[name]=textEncoder.encode(new XMLSerializer().serializeToString(doc));}

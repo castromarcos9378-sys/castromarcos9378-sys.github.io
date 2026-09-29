@@ -973,6 +973,26 @@ window.addEventListener('appinstalled',()=>{pwaInstallPrompt=null;updateInstallP
 window.matchMedia?.('(display-mode: standalone)').addEventListener?.('change',()=>updateInstallPwa());
 installBtns.forEach(b=>b.addEventListener('click',runInstallPwa));
 updateInstallPwa();
+// Actualizaciones dentro de la PWA ya instalada; ningún borrado de datos ni reinstalación.
+(function configureInPlaceUpdates(){
+ if(!('serviceWorker' in navigator))return;
+ let hadController=!!navigator.serviceWorker.controller,startedAt=0;
+ function announce(){
+  if(document.getElementById('updateAvailableBanner'))return;
+  const el=document.createElement('div');
+  el.id='updateAvailableBanner';el.setAttribute('role','status');
+  el.style.cssText='position:fixed;z-index:99999;bottom:calc(12px + env(safe-area-inset-bottom));left:12px;right:12px;max-width:580px;margin:0 auto;background:#e8f6ed;color:#17492d;border:1px solid #6baa84;border-radius:14px;padding:14px;box-shadow:0 4px 22px #142e4d44;font-size:14px;line-height:1.4';
+  const msg=document.createElement('span');msg.textContent='Hay una actualización disponible. Guarda cualquier registro antes de actualizar. ';
+  const btn=document.createElement('button');btn.type='button';btn.textContent='Actualizar ahora';btn.style.cssText='min-height:40px;margin:6px 0 0 12px;padding:9px 14px;border-radius:10px;border:0;background:#206545;color:white;font-weight:750';
+  btn.onclick=()=>location.reload();
+  el.append(msg,btn);document.body.append(el);
+ }
+ navigator.serviceWorker.addEventListener('controllerchange',()=>{if(hadController)announce();hadController=true});
+ const check=()=>{if(!navigator.onLine||Date.now()-startedAt<15*60*1000)return;startedAt=Date.now();navigator.serviceWorker.getRegistration('./').then(reg=>reg?.update()).catch(()=>{})};
+ window.addEventListener('focus',check);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)check()});
+ window.addEventListener('load',check,{once:true});
+})();
 init();switchTab('access');
 if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost')){
  navigator.serviceWorker.register('./sw.js',{scope:'./'}).then(async reg=>{

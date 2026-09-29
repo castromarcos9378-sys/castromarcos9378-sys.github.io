@@ -246,7 +246,16 @@ function write(bytes,project,record,who){
   for(const [key,val] of Object.entries(vals)){
    const c=h[lower(key)];if(!c)continue;
    const node=children(row,'c').find(x=>col(x.getAttribute('r'))===c);
-   if(node&&children(node,'f').length&&['vigente','origen','antes','clave'].includes(lower(key)))continue;
+   if(node&&children(node,'f').length){
+    // DAOS has prepared formula cells. Preserve the equation, and cache ID
+    // so re-reading the XLSX works even before Excel recalculates it.
+    if(lower(key)==='id'){
+      let cached=children(node,'v')[0];
+      if(!cached){cached=doc.createElementNS(M,'v');node.appendChild(cached)}
+      cached.textContent=String(id);
+    }
+    continue;
+   }
    put(c,val);
   }
  }

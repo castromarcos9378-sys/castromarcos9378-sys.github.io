@@ -1,11 +1,11 @@
 # ATALÍA / DAOS — Preparación de acceso delegado (rama de trabajo)
 
-Fecha de inicio: 2026-09-28. Objetivo: teléfonos de empresa; propietario mantiene control del Dropbox de trabajo. No alterar las aplicaciones de producción ni los Libros Maestros durante el desarrollo.
+Fecha de inicio: 2026-09-28. Objetivo: acceso delegado en teléfonos personales de trabajadores de confianza; propietario mantiene control del Dropbox de trabajo. No alterar las aplicaciones de producción ni los Libros Maestros durante el desarrollo.
 
 ## Decisiones confirmadas
-- Dos aplicaciones independientes y dos teléfonos de empresa (ambos iPhone).
+- Dos aplicaciones independientes para dos iPhone **personales** de los responsables (José: ATALÍA, Andrés: DAOS).
 - El propietario también puede registrar de vez en cuando con su celular.
-- Trabajadores solo usan la aplicación correspondiente a su obra; no deben instalar Dropbox, conocer credenciales de Dropbox ni manipular sus archivos.
+- José y Andrés utilizan sus propios iPhone personales, cada uno únicamente con la aplicación correspondiente a su obra; no deben instalar Dropbox para este fin, conocer credenciales de Dropbox del propietario ni manipular los archivos maestros.
 - Acceso revocable por dispositivo/proyecto, sin cuentas individuales de trabajadores; eliminar la PWA **no equivale a revocar el acceso**.
 - Entrega deseada antes del 2026-10-03; instalar y probar primero en **iPhone asignado a ATALÍA (José)** y después en **iPhone asignado a DAOS (Andrés)**.
 
@@ -59,7 +59,7 @@ Fecha de inicio: 2026-09-28. Objetivo: teléfonos de empresa; propietario mantie
 - Cada proyecto tiene una persona responsable de utilizar el teléfono empresarial, pero no se requiere inicio de sesión individual ni se verifica la identidad de cada uso.
 - **ATALÍA:** José es el responsable operativo actualmente; el iPhone está destinado al registro de ATALÍA.
 - **DAOS:** Andrés es el responsable operativo confirmado; el iPhone se destina al registro de DAOS.
-- Si cambia el responsable, se entrega el teléfono del proyecto al nuevo encargado; no se rehace la aplicación ni se modifica el histórico.
+- Si cambia el responsable, **no se entrega su teléfono personal**: el propietario revoca la credencial de autorización de ese dispositivo y autoriza separadamente el dispositivo del nuevo responsable, sin rehacer la aplicación ni modificar el histórico.
 - La identidad técnica que controla/revoca el servidor corresponde al teléfono y proyecto, no a la persona. No asociar automáticamente cada registro a José/Andrés como autor físico sin pruebas.
 - La identificación del **contratista que ejecutó la actividad** sigue siendo un dato distinto del responsable de manejar el teléfono.
 
@@ -79,3 +79,11 @@ Fecha de inicio: 2026-09-28. Objetivo: teléfonos de empresa; propietario mantie
 - La aplicación de cada obra permanece totalmente independiente; ambas requieren pruebas de PWA con Safari y acceso delegado específico de su dispositivo/proyecto.
 - El propietario conserva su propio acceso para registrar en las obras cuando sea necesario; no se debe reemplazar por el acceso limitado de los teléfonos de empresa.
 - Los Dashboards aprobados no equivalen todavía a aplicativos delegados probados en ambos iPhone; no autorizar Dropbox personal en ellos.
+
+## Uso de dispositivos personales (BYOD, confirmado por Marcos 28/09/2026)
+- Los iPhone son **propiedad personal** de José y Andrés, trabajadores de confianza. Cada uno usa su propio dispositivo habitualmente para evitar llevar dos equipos.
+- El propietario mantiene su propio acceso administrativo a ambas obras. No se instalarán perfiles MDM, no se administrará remotamente el iPhone completo y no se accederá a fotos, documentos ni aplicaciones personales.
+- Consentimiento claro antes de instalar la PWA: registrar y sincronizar únicamente actividades, fechas y fotografías de obra **seleccionadas por el usuario**; solicitar cámara/biblioteca solo mediante permisos normales de iOS.
+- Servidor revoca únicamente la credencial de acceso a registros de obra de cada dispositivo/proyecto. No confundir revocar autorización con desinstalar la PWA ni prometer borrado remoto de datos ya descargados, especialmente sin conexión.
+- Minimizar datos locales del proyecto y no exponer secretos, pagos, XLSX completos ni credenciales de Dropbox en sus teléfonos.
+- Mantener proyectos aislados y registro idempotente. Al cambiar de responsable o dispositivo, revocar credencial previa y autorizar credencial nueva de manera explícita, sin alterar historial.

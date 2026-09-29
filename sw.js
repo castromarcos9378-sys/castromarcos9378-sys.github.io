@@ -1,4 +1,4 @@
-const CACHE='daos-registro-v10-2-ios-update-safe-20260928';
+const CACHE='daos-registro-v10-3-personal-audit-20260929';
 const CORE=['./','./index.html','./manifest.webmanifest','./daos-icon.svg','./sw.js'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x.startsWith('daos-registro-')&&x!==CACHE).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));

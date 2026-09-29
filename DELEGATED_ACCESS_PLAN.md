@@ -87,3 +87,16 @@ Fecha de inicio: 2026-09-28. Objetivo: acceso delegado en teléfonos personales 
 - Servidor revoca únicamente la credencial de acceso a registros de obra de cada dispositivo/proyecto. No confundir revocar autorización con desinstalar la PWA ni prometer borrado remoto de datos ya descargados, especialmente sin conexión.
 - Minimizar datos locales del proyecto y no exponer secretos, pagos, XLSX completos ni credenciales de Dropbox en sus teléfonos.
 - Mantener proyectos aislados y registro idempotente. Al cambiar de responsable o dispositivo, revocar credencial previa y autorizar credencial nueva de manera explícita, sin alterar historial.
+
+## Actualización de autenticación e identidad del registrador (confirmada por Marcos 28/09/2026)
+**Esta sección reemplaza los planteamientos anteriores que descartaban usuarios personales.** En particular, la simplificación previa de identidad exclusivamente por dispositivo queda SUPERADA. No atribuir retroactivamente registros históricos ni inventar usuarios en archivos existentes.
+
+- **Marcos**: cuenta de administrador propia y acceso a los aplicativos de ATALÍA y DAOS, con su propio nombre asociado a cada registro nuevo que realice.
+- **José**: cuenta individual propia, contraseña/PIN privado que pueda establecer en la activación y acceso de registro exclusivamente a ATALÍA desde su iPhone personal.
+- **Andrés**: cuenta individual propia, contraseña/PIN privado que pueda establecer en la activación y acceso de registro exclusivamente a DAOS desde su iPhone personal.
+- Separar **identidad del usuario autenticado** de **credencial/autorización del dispositivo**, que sirve adicionalmente para revocar un equipo. Solo un usuario con sesión válida y permiso para el proyecto puede leer o escribir los registros correspondientes. No inferir la identidad humana solo del teléfono.
+- El **servidor** determina y sella el campo de auditoría `registrado_por` (nombre público e ID interno de la cuenta) al confirmar cada registro. El cliente no puede escribir libremente otro nombre para atribuirse su autoría. Los registros sin conexión se etiquetan localmente como borradores pendientes; el servidor verifica sesión, proyecto y la integridad del autor al sincronizarlos.
+- En el Libro Maestro: `contratista` continúa siendo **ECM Constructores** cuando corresponda; el **maestro ejecutor** (FADELIN, Yohan, Osmane, etc.) es independiente del **registrador** (Marcos, José, Andrés). No suponer que quien registra ejecutó la obra.
+- Proteger contraseñas con hash resistente en backend, no guardarlas en claro ni enviarlas a GitHub o chat. Sesiones limitadas y revocables; contraseña y dispositivo se revocan por separado. No incluir tokens de Dropbox ni archivos administrativos completos en los iPhone personales.
+- Para compatibilidad, agregar la atribución a **futuros registros** mediante extensión explícita comprobada del Libro Maestro; no reemplazar ni repoblar históricos, no cambiar hojas ni fórmulas de producción sin aprobación y pruebas.
+- Antes de desplegar, probar cuentas y permisos cruzados, reinicio/cambio de clave, pérdida/revocación de teléfono, registro con fotos sin conexión, deduplicación y el administrador registrando en ambos proyectos.

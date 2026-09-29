@@ -1,0 +1,7 @@
+{
+  "id":"./","name":"DAOS · Arq. Andrés Mora","short_name":"DAOS Andrés",
+  "description":"Registro de obra DAOS para Arq. Andrés Mora",
+  "start_url":"./index.html","scope":"./","display":"standalone","orientation":"portrait-primary",
+  "background_color":"#132b48","theme_color":"#132b48","prefer_related_applications":false,
+  "icons":[{"src":"../daos-icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}

@@ -107,3 +107,13 @@ Fecha de inicio: 2026-09-28. Objetivo: acceso delegado en teléfonos personales 
 - **Arq. Andrés Mora** — acceso a registros de DAOS.
 - Mostrar exactamente estos nombres y títulos en la aplicación tras autenticarse y en el campo de auditoría `registrado_por` de **registros nuevos**. El servidor asigna el nombre a partir de la cuenta autenticada; no se permite edición manual del autor.
 - Separar esta identificación de los campos de contratista (ECM cuando corresponda) y maestro ejecutor. Preservar intacto el historial anterior y no reatribuir registros pasados.
+
+## Actualizaciones sin reinstalación y resultados de pruebas (28/09/2026)
+- La aplicación de Marcos en ATALÍA y la base visual de DAOS mantienen exactamente sus URL, manifiestos, IDs y ámbitos: la PWA instalada recibe el código nuevo al reabrirse, sin otra instalación.
+- Comprobación de nueva versión al abrir o regresar a la app; notificación y botón Actualizar ahora. No se fuerza una recarga mientras el usuario rellena un registro, para no perder datos.
+- Los service workers eliminan exclusivamente sus propias cachés y nunca guardan respuestas de autenticación ni páginas privadas. La app original DAOS conserva los elementos para instalación por Safari en iPhone.
+- La app propia de ATALÍA admite Base Maestra V30 durante la transición y V34 después de publicar coordinadamente. V34 ofrece la nueva actividad CONEXIONES EXTERNAS/Potable (0 % físico), dejando Sanitaria fuera del formulario.
+- Las versiones personales para iPhone de ATALÍA y DAOS tienen instaladores separados en las rutas atalia/delegado/ y delegado/; son interfaces de prueba hasta concluir cuentas personales y sincronización de servidor.
+- Las pruebas automatizadas de regresión están en tests/pwa-update-regression.test.cjs y se ejecutan con GitHub Actions en esta rama. No existe ningún despliegue de producción en esta rama.
+- Los registros propios nuevos de Marcos incluyen su nombre en el manifiesto; mientras no se agregue una columna de autoría validada, el nombre queda trazable junto al identificador móvil en Observaciones.
+- Antes de cambiar el libro operativo a V34: confirmar respaldo, compatibilidad, historial nuevo, ausencia de sincronizaciones simultáneas y publicación coordinada con la PWA. No cambiar producción sin esas comprobaciones.

@@ -166,7 +166,22 @@ async function recoverJose(req,res,body){
   generation:crypto.randomUUID(),failed:0,lockUntil:0,
   usedRecoveryInvitationDigest:digest,passwordRecoveredAt:new Date().toISOString()};
  try{await store.upload(who.project,userPath(who),Buffer.from(JSON.stringify(next)),current.rev);}
- catch(e){if(e.status===409)throw Object.assign(Error('La cuenta cambió durante la recuperación. Actualiza la página'),{status:409});throw e;}
+ catch(e){
+  if(e.status===409){
+   // Conflict is not proof of a concurrent edit. Distinguish a changed revision
+   // from a malformed path or another upstream write failure.
+   const upstream=String(e.detail||'');
+   const currentAgain=await getProfile(who);
+   if(currentAgain&&currentAgain.rev!==current.rev)
+    throw Object.assign(Error('Otra operación cambió la cuenta. Actualiza la página'),{status:409});
+   console.error('field recover: Dropbox write rejected; category '+
+    (upstream.includes('malformed_path')?'malformed_path':
+     upstream.includes('conflict')?'conflict':
+     upstream.includes('not_found')?'not_found':'other'));
+   throw Object.assign(Error('Dropbox rechazó guardar el perfil. El administrador debe revisar el registro del servidor'),{status:503});
+  }
+  throw e;
+ }
  const token=sign({sub:who.id,project:who.project,gen:next.generation,exp:Math.floor(Date.now()/1000)+MAX_AGE});
  setCookie(res,token);
  return {active:true,name:who.name,project:who.project};

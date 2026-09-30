@@ -97,5 +97,42 @@ async function login(req,res,body){
  const token=sign({sub:who.id,project:who.project,gen:p.generation,exp:Math.floor(Date.now()/1000)+MAX_AGE});
  setCookie(res,token);return {active:true,name:who.name,project:who.project};
 }
+/**
+ * A Jose-only, single-use recovery using the already issued invitation.
+ * Never deletes a profile or changes workbook/field records.
+ * Successful recovery invalidates every old session via generation rotation.
+ */
+async function recoverJose(req,res,body){
+ if(!checkOrigin(req))throw Object.assign(Error('Origen no autorizado'),{status:403});
+ const who=person(body.userId);
+ if(who.id!=='jose-reynoso'||who.project!=='atalia')
+  throw Object.assign(Error('Recuperación no autorizada'),{status:403});
+ const password=String(body.password||''),invite=String(body.invitation||'');
+ if(password.length<10||password.length>128||invite.length<24||invite.length>256)
+  throw Object.assign(Error('Introduce la invitación y una contraseña de entre 10 y 128 caracteres'),{status:400});
+ if((process.env.FIELD_DISABLED_USERS||'').split(',').map(x=>x.trim()).includes(who.id))
+  throw Object.assign(Error('Acceso revocado por el administrador'),{status:403});
+ let invites;try{invites=JSON.parse(process.env.FIELD_INVITES_JSON||'null');}catch{invites=null;}
+ const digest=invites?.[who.id];
+ if(!digest||!/^[a-f0-9]{64}$/i.test(digest)||!timeSafe(sha(invite),digest))
+  throw Object.assign(Error('La invitación no es válida'),{status:403});
+ const current=await getProfile(who);
+ if(!current)throw Object.assign(Error('Primero debes activar tu cuenta'),{status:409});
+ const p=current.profile;
+ // A given invitation can reset the account at most once, even if Vercel
+ // still contains its digest. The revision precondition blocks racing resets.
+ if(p.usedRecoveryInvitationDigest===digest)
+  throw Object.assign(Error('Esta invitación ya se utilizó para recuperar el acceso'),{status:409});
+ const salt=crypto.randomBytes(24).toString('hex');
+ const hash=crypto.scryptSync(password,salt,64,{N:16384,r:8,p:1}).toString('hex');
+ const next={...p,password:{scheme:'scrypt-n16384',salt,hash},enabled:true,
+  generation:crypto.randomUUID(),failed:0,lockUntil:0,
+  usedRecoveryInvitationDigest:digest,passwordRecoveredAt:new Date().toISOString()};
+ try{await store.upload(who.project,userPath(who),Buffer.from(JSON.stringify(next)),current.rev);}
+ catch(e){if(e.status===409)throw Object.assign(Error('La cuenta cambió durante la recuperación. Actualiza la página'),{status:409});throw e;}
+ const token=sign({sub:who.id,project:who.project,gen:next.generation,exp:Math.floor(Date.now()/1000)+MAX_AGE});
+ setCookie(res,token);
+ return {active:true,name:who.name,project:who.project};
+}
 function logout(res){setCookie(res,'',0);return {active:false};}
-module.exports={COOKIE,PEOPLE,person,checkOrigin,activate,login,logout,assertSession};
+module.exports={COOKIE,PEOPLE,person,checkOrigin,activate,login,recoverJose,logout,assertSession};

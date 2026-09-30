@@ -81,14 +81,34 @@ async function activate(req,res,body){
  const digest=invites?.[who.id];
  if(!digest||!/^[a-f0-9]{64}$/i.test(digest)||!timeSafe(sha(invite),digest))
   throw Object.assign(Error('La invitación no es válida'),{status:403});
- if(await getProfile(who))throw Object.assign(Error('La cuenta ya está activada'),{status:409});
+ const existing=await getProfile(who);
+ if(existing)throw Object.assign(Error('La cuenta ya está activada'),{status:409});
  const salt=crypto.randomBytes(24).toString('hex');
  const hashed=crypto.scryptSync(password,salt,64,{N:16384,r:8,p:1}).toString('hex');
  const profile={id:who.id,name:who.name,project:who.project,password:{scheme:'scrypt-n16384',salt,hash:hashed},
   enabled:true,generation:crypto.randomUUID(),failed:0,lockUntil:0,created:new Date().toISOString()};
- await store.ensureFolder(who.project,store.projectConfig(who.project).root+'/CONTROL_ACCESO_MOVIL');
- try{await store.upload(who.project,userPath(who),Buffer.from(JSON.stringify(profile)));}catch(e){
-  if(e.status===409)throw Object.assign(Error('Cuenta ya activada'),{status:409});throw e;
+ // Do not treat every Dropbox 409 as an already existing account: parent
+ // directory problems and file conflicts share that HTTP status.
+ try{await store.ensureFolder(who.project,store.projectConfig(who.project).root+'/CONTROL_ACCESO_MOVIL');}
+ catch(e){
+  console.error('field activate: ensure profile folder failed; Dropbox status '+(e.status||500));
+  throw Object.assign(Error('No se pudo preparar la carpeta de acceso en Dropbox'),{status:503});
+ }
+ try{await store.upload(who.project,userPath(who),Buffer.from(JSON.stringify(profile)));}
+ catch(e){
+  if(e.status===409){
+   const current=await getProfile(who);
+   if(current)throw Object.assign(Error('La cuenta ya está activada'),{status:409});
+   console.error('field activate: Dropbox upload conflict without readable profile');
+   throw Object.assign(Error('Dropbox rechazó crear el perfil. No se creó la cuenta; revisa la conexión y los permisos de Dropbox'),{status:503});
+  }
+  throw e;
+ }
+ // Do not issue a valid cookie before the newly created profile is readable.
+ const confirmed=await getProfile(who);
+ if(!confirmed||confirmed.profile.generation!==profile.generation){
+  console.error('field activate: profile upload succeeded but read-back differs');
+  throw Object.assign(Error('Dropbox no confirmó la nueva cuenta. No vuelvas a registrarte hasta revisar el acceso'),{status:503});
  }
  const token=sign({sub:who.id,project:who.project,gen:profile.generation,exp:Math.floor(Date.now()/1000)+MAX_AGE});
  setCookie(res,token);return {active:true,name:who.name,project:who.project};

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer"><meta http-equiv="Cache-Control" content="no-store">
+<title>ATALÍA · Recuperación de acceso de José</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:#132b48;background:#e9eff7}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:18px}
+main{width:min(100%,440px);background:#fff;border-radius:18px;padding:28px;box-shadow:0 15px 50px #19334c1b}
+h1{font-size:23px;margin:0 0 8px}p{line-height:1.5}small{color:#536579}label{display:block;font-weight:650;margin:20px 0 6px}
+input{width:100%;font:inherit;padding:13px;border:1px solid #a7b7ca;border-radius:9px}
+button,.return{display:block;width:100%;margin-top:22px;padding:13px;border:0;border-radius:9px;text-align:center;background:#174d9c;color:white;font:inherit;font-weight:700;text-decoration:none;cursor:pointer}
+button:disabled{opacity:.65;cursor:wait}.return{background:#166747}
+#status{margin-top:16px;white-space:pre-line}#status[role=alert]{color:#af2636}
+</style>
+</head>
+<body>
+<main>
+<h1>ATALÍA · José Reynoso</h1>
+<p>Recuperación de acceso. Utiliza el código de invitación que Marcos te envió y elige una <strong>nueva contraseña personal</strong>.</p>
+<form id="form" autocomplete="off">
+<label for="inv">Código de invitación</label>
+<input id="inv" type="text" minlength="24" maxlength="256" required spellcheck="false" autocapitalize="off" autocomplete="off">
+<label for="pw">Nueva contraseña (mínimo 10 caracteres)</label>
+<input id="pw" type="password" minlength="10" maxlength="128" required autocomplete="new-password">
+<label for="pw2">Confirma la nueva contraseña</label>
+<input id="pw2" type="password" minlength="10" maxlength="128" required autocomplete="new-password">
+<button id="submit" type="submit">Restablecer contraseña</button>
+</form>
+<p id="status" aria-live="polite"></p>
+<a class="return" id="return" href="../" hidden>Entrar a mi aplicación</a>
+<small>Esta invitación solo permite una recuperación. No envíes tu contraseña a nadie.</small>
+</main>
+<script>
+'use strict';
+const form=document.getElementById('form'),status=document.getElementById('status'),
+submit=document.getElementById('submit'),back=document.getElementById('return');
+form.addEventListener('submit',async event=>{
+ event.preventDefault();
+ const password=document.getElementById('pw').value,
+ confirmation=document.getElementById('pw2').value,
+ invitation=document.getElementById('inv').value.trim();
+ status.removeAttribute('role');
+ if(password.length<10||password.length>128||password!==confirmation){
+  status.setAttribute('role','alert');status.textContent='Revisa la contraseña y su confirmación.';return;
+ }
+ submit.disabled=true;status.textContent='Comprobando invitación de forma segura…';
+ try{
+  const response=await fetch('/api/field?op=recover-jose&project=atalia',{
+   method:'POST',credentials:'same-origin',cache:'no-store',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({userId:'jose-reynoso',invitation,password})
+  });
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok)throw Error(result.error||'No se pudo completar la recuperación.');
+  form.reset();form.hidden=true;back.hidden=false;
+  status.textContent='Contraseña actualizada. Ahora puedes entrar a Atalía.';
+ }catch(e){status.setAttribute('role','alert');status.textContent=e.message||'No se pudo completar la recuperación.';}
+ finally{submit.disabled=false;}
+});
+</script>
+</body>
+</html>

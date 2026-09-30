@@ -40,11 +40,28 @@ function decode(signed){
 }
 async function getProfile(who){
  const path=userPath(who);
- try{const [m,bytes]=await Promise.all([store.metadata(who.project,path),store.download(who.project,path)]);
- const profile=JSON.parse(bytes.toString('utf8'));
- if(profile.id!==who.id||profile.project!==who.project||profile.name!==who.name)throw Error('Identidad de perfil inconsistente');
- return {profile,rev:m.rev};}
- catch(e){if(e.status===409)return null;throw e;}
+ // Distinguish missing metadata from a failed download. Dropbox uses HTTP 409
+ // for both; treating every 409 as "not activated" produced contradictory flows.
+ let meta;
+ try{meta=await store.metadata(who.project,path);}
+ catch(e){
+  if(e.status===409&&String(e.detail||'').includes('not_found'))return null;
+  console.error('field profile: metadata unavailable; status '+(e.status||500));
+  throw Object.assign(Error('No se pudo verificar el perfil de acceso'),{status:503});
+ }
+ if(meta['.tag']!=='file')throw Object.assign(Error('El perfil no es un archivo'),{status:503});
+ let bytes;
+ try{bytes=await store.download(who.project,path);}
+ catch(e){
+  console.error('field profile: metadata exists but download failed; status '+(e.status||500));
+  throw Object.assign(Error('El perfil existe, pero no se pudo leer desde Dropbox'),{status:503});
+ }
+ let profile;
+ try{profile=JSON.parse(bytes.toString('utf8'));}
+ catch{throw Object.assign(Error('El perfil no tiene un formato válido'),{status:503});}
+ if(profile.id!==who.id||profile.project!==who.project||profile.name!==who.name)
+  throw Object.assign(Error('Identidad de perfil inconsistente'),{status:503});
+ return {profile,rev:meta.rev};
 }
 async function assertSession(req,project){
  const session=decode(cookieFrom(req));

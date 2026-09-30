@@ -441,7 +441,7 @@ $('excel').addEventListener('change',async e=>{
   if(!/\.xlsx$/i.test(f.name))throw Error('Selecciona un archivo .xlsx');
   if(f.size>20*1024*1024)throw Error('El archivo excede el tamaño admitido');
   const match=f.name.match(/ATALIA_VILLAS_BASE_MAESTRA_CUBICACIONES_V(\d+)(?:_AJUSTADA)?\.xlsx/i);
-  if(!match||f.name!=='ATALIA_VILLAS_BASE_MAESTRA_CUBICACIONES_V34_AJUSTADA.xlsx'throw Error('Selecciona únicamente la Base Maestra Atalía V34 aprobada. No se admite V30 ni otra versión.');
+  if(!match||f.name!=='ATALIA_VILLAS_BASE_MAESTRA_CUBICACIONES_V34_AJUSTADA.xlsx')throw Error('Selecciona únicamente la Base Maestra Atalía V34 aprobada. No se admite V30 ni otra versión.');
   const data=sourceFromSheets(await parseWorkbook(await f.arrayBuffer())),meta={filename:f.name,loaded:new Date().toISOString(),...data};
   await idbPut('meta',meta,'reference');reference=meta;villas=data.villas;catalog=data.catalog;history=new Map(data.history);hydrateLists();renderPending();renderRecords();updateSource();
   status.className='file-picker-status loaded';status.textContent='✓ Cargada: '+f.name;showMessage($('importMsg'),'ok','Base Maestra cargada correctamente: <strong>'+escapeHTML(f.name)+'</strong>. '+data.rows+' registros históricos leídos.')

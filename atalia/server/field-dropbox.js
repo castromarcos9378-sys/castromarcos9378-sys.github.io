@@ -27,6 +27,11 @@ function assertPath(project,path){const root=projectConfig(project).root;
  throw Object.assign(Error('Ruta fuera del proyecto'),{status:403});
  return path;
 }
+// Dropbox requires ASCII-escaped JSON inside Dropbox-API-Arg HTTP headers.
+function headerJson(obj){
+ return JSON.stringify(obj).replace(/[\u007f-\uffff]/g,
+  ch=>'\\u'+ch.charCodeAt(0).toString(16).padStart(4,'0'));
+}
 function dbxError(status,body){const e=Error('Dropbox no confirmó la operación ('+status+')');e.status=status===409?409:status>=500?503:502;e.detail=String(body||'').slice(0,600);return e}
 async function rpc(project,endpoint,arg){const token=await accessToken(project);
  const response=await fetch('https://api.dropboxapi.com/2/'+endpoint,{method:'POST',
@@ -45,7 +50,7 @@ async function upload(project,path,data,revision){
  const mode=revision?{'.tag':'update',update:revision}:'add';
  const arg={path:assertPath(project,path),mode,autorename:false,mute:true,strict_conflict:true};
  const r=await fetch('https://content.dropboxapi.com/2/files/upload',{method:'POST',
- headers:{Authorization:'Bearer '+token,'Dropbox-API-Arg':JSON.stringify(arg),'Content-Type':'application/octet-stream'},body:bytes});
+ headers:{Authorization:'Bearer '+token,'Dropbox-API-Arg':headerJson(arg),'Content-Type':'application/octet-stream'},body:bytes});
  if(!r.ok)throw dbxError(r.status,await r.text());return r.json();
 }
 async function ensureFolder(project,path){

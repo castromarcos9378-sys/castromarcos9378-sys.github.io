@@ -1,0 +1,20 @@
+{
+  "id": "./",
+  "name": "ATALÍA Campo · acceso personal",
+  "short_name": "ATALÍA Campo",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#132b48",
+  "theme_color": "#132b48",
+  "icons": [
+    {
+      "src": "../atalia-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "description": "Acceso autorizado a registros de campo de ATALÍA desde iPhone personal"
+}

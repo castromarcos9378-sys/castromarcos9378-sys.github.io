@@ -441,7 +441,7 @@ $('excel').addEventListener('change',async e=>{
   if(!/\.xlsx$/i.test(f.name))throw Error('Selecciona un archivo .xlsx');
   if(f.size>20*1024*1024)throw Error('El archivo excede el tamaño admitido');
   const match=f.name.match(/ATALIA_VILLAS_BASE_MAESTRA_CUBICACIONES_V(\d+)(?:_AJUSTADA)?\.xlsx/i);
-  if(!match||Number(match[1])!==34)throw Error('Selecciona únicamente la Base Maestra Atalía V34 aprobada. No se admite V34 ni otra versión.');
+  if(!match||f.name!=='ATALIA_VILLAS_BASE_MAESTRA_CUBICACIONES_V34_AJUSTADA.xlsx'throw Error('Selecciona únicamente la Base Maestra Atalía V34 aprobada. No se admite V30 ni otra versión.');
   const data=sourceFromSheets(await parseWorkbook(await f.arrayBuffer())),meta={filename:f.name,loaded:new Date().toISOString(),...data};
   await idbPut('meta',meta,'reference');reference=meta;villas=data.villas;catalog=data.catalog;history=new Map(data.history);hydrateLists();renderPending();renderRecords();updateSource();
   status.className='file-picker-status loaded';status.textContent='✓ Cargada: '+f.name;showMessage($('importMsg'),'ok','Base Maestra cargada correctamente: <strong>'+escapeHTML(f.name)+'</strong>. '+data.rows+' registros históricos leídos.')
@@ -754,7 +754,7 @@ async function getLatestBookFilename(){
  let response=await dropboxRPC('files/list_folder',{path:DROPBOX_BOOK_DIR,recursive:false,include_deleted:false,limit:1000}),list=[...(response.entries||[])],rounds=0;
  while(response.has_more){if(++rounds>12)throw Error('No fue posible terminar el listado de la Base Maestra.');response=await dropboxRPC('files/list_folder/continue',{cursor:response.cursor});list.push(...(response.entries||[]))}
  const options=list.filter(f=>f['.tag']==='file'&&f.name==='ATALIA_VILLAS_BASE_MAESTRA_CUBICACIONES_V34_AJUSTADA.xlsx');
- if(!options.length)throw Error('Falta la Base Maestra V34 aprobada en Dropbox. No se utilizará V34 ni se modificarán datos anteriores.');return options[0].name
+ if(!options.length)throw Error('Falta la Base Maestra V34 aprobada en Dropbox. No se utilizará V30 ni se modificarán datos anteriores.');return options[0].name
 }
 async function loadRemoteReference(notice=true){if(!dropboxAuth)throw Error('Conecta Dropbox antes.');const fname=await getLatestBookFilename();const path=DROPBOX_BOOK_DIR+'/'+fname;const meta=await dropboxRPC('files/get_metadata',{path});if(meta['.tag']!=='file')throw Error('La Base Maestra no es un archivo.');if(meta.size>15*1024*1024)throw Error('Base Maestra supera 15 MB; detener carga.');const data=sourceFromSheets(await parseWorkbook(await dropboxDownload(path)));const updated={filename:fname,loaded:new Date().toISOString(),remoteRev:meta.rev,remotePath:path,...data};await idbPut('meta',updated,'reference');reference=updated;villas=data.villas;catalog=data.catalog;history=new Map(data.history);hydrateLists();renderPending();renderRecords();updateSource();syncCounts();if(notice)cloudMessage('ok','Referencia '+fname+' revisada desde Dropbox. '+data.rows+' filas históricas leídas. Ningún Excel modificado.');return updated}
 async function stageRecord(r,photoMap){

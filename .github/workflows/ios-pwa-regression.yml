@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feature/ios-personal-marcos-jose-andres-20260928
+      - feature/atalia-v34-fadelin-yohan-updates-20260930
   workflow_dispatch:
 permissions:
   contents: read

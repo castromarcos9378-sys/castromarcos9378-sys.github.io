@@ -31,7 +31,7 @@ test('Los nuevos registros ATALÍA mantienen histórico y avance separado',()=>{
  const app=read('atalia/index.html');assert.match(app,/CONEXIONES EXTERNAS'\s*,\s*\['Potable'\]/);
  assert.match(app,/LEGACY_CONFLICTS/);assert.match(app,/REGISTRADOR_ACTUAL=\{id:'marcos-castro'/);
  assert.match(app,/Object\.prototype\.hasOwnProperty\.call\(source\.activityWeights/);
- assert.match(app,/\[6,7\]\.includes\(catalog\.length\)/);assert.match(app,/configureInPlaceUpdates/);
+ assert.match(app,/catalog\.length!==7/);assert.match(app,/f\.name!=='ATALIA_VILLAS_BASE_MAESTRA_CUBICACIONES_V34_AJUSTADA\.xlsx'/);assert.match(app,/No se admite V30/);assert.match(app,/configureInPlaceUpdates/);
  assert.ok(!app.includes("['CONEXIONES EXTERNAS',['COMPLETA','Potable']]"));
 });
 test('DAOS instala sin cuenta Dropbox en la pantalla de actualización',()=>{

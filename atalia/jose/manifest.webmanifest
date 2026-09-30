@@ -1,0 +1,7 @@
+{
+  "id":"./","name":"ATALÍA · Ing. José Reynoso","short_name":"ATALÍA José",
+  "description":"Registro de obra ATALÍA para Ing. José Reynoso",
+  "start_url":"./index.html","scope":"./","display":"standalone","orientation":"portrait-primary",
+  "background_color":"#132b48","theme_color":"#132b48","prefer_related_applications":false,
+  "icons":[{"src":"../atalia-icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}

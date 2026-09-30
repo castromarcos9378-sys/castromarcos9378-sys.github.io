@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+<head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+ <meta name="theme-color" content="#132b48">
+ <meta name="apple-mobile-web-app-capable" content="yes">
+ <meta name="apple-mobile-web-app-title" content="ATALÍA Campo">
+ <meta name="apple-mobile-web-app-status-bar-style" content="default">
+ <title>ATALÍA · Acceso personal iPhone</title>
+ <link rel="manifest" href="./manifest.webmanifest">
+ <link rel="apple-touch-icon" href="../atalia-icon.svg">
+ <style>
+  *{box-sizing:border-box}
+  :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172e4a;background:#f3f6fc}
+  body{margin:0}
+  header{padding:calc(24px + env(safe-area-inset-top)) 22px 24px;background:#132b48;color:white}
+  header small{letter-spacing:.16em;font-weight:700;color:#d5e8ff}
+  header h1{margin:10px 0 0;font-size:29px;line-height:1.15}
+  main{max-width:550px;margin:0 auto;padding:24px 18px calc(40px + env(safe-area-inset-bottom))}
+  section{padding:22px;background:white;border:1px solid #dce5f1;border-radius:20px;box-shadow:0 8px 20px #173e6511;margin-bottom:18px}
+  h2{margin:0 0 12px;font-size:21px}
+  p{font-size:15px;line-height:1.55;color:#3e526e}
+  label{font-size:14px;font-weight:700;display:block;margin:17px 0 8px}
+  input{display:block;width:100%;padding:15px;font-size:17px;border:1px solid #b4c7dd;border-radius:12px}
+  button{border:0;border-radius:13px;padding:15px 18px;width:100%;min-height:50px;background:#154a9c;color:white;font-size:16px;font-weight:750;cursor:pointer;margin:12px 0 2px}
+  button:disabled{opacity:.5}
+  .notice{background:#eaf3ff;color:#243e64;padding:15px;border-radius:13px;line-height:1.55}
+  .good{background:#e7f7ec;color:#205e3c}
+  .error{background:#ffecec;color:#822c2c}
+  .muted{color:#637992;font-size:13px}
+  [hidden]{display:none!important}
+ </style>
+</head>
+<body>
+ <header>
+  <small>ACCESO PERSONAL · ATALÍA</small>
+  <h1>Registro de obra</h1>
+ </header>
+ <main>
+  <section>
+   <h2>Estado del iPhone</h2>
+   <p class="notice" id="status" role="status" aria-live="polite">Comprobando autorización…</p>
+   <p class="muted">Esta aplicación utiliza tu iPhone personal. Solo podrá consultar y enviar los datos del proyecto ATALÍA cuando la autorización personal esté habilitada.</p>
+   <button type="button" id="check">Comprobar conexión</button>
+  </section>
+  <section id="setup" hidden>
+   <h2>Activación inicial</h2>
+   <p>El administrador autoriza este dispositivo. Después se verificará tu identidad personal para atribuir cada registro al usuario correcto. No se necesita instalar Dropbox.</p>
+   <label for="token">Código de activación del dispositivo</label>
+   <input id="token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="text" placeholder="Código proporcionado por el administrador">
+   <button id="activate" type="button">Activar este iPhone</button>
+   <p class="muted">No compartas este código por WhatsApp ni lo envíes a ChatGPT.</p>
+  </section>
+  <section id="pending" hidden>
+   <h2>Registro personal en preparación</h2>
+   <p>La activación del iPhone y el acceso personal son pasos distintos. La sincronización delegada sigue en pruebas. Todavía no registres actividades reales aquí.</p>
+   <button id="signout" type="button">Cerrar la sesión del dispositivo</button>
+  </section>
+ </main>
+ <script>
+ 'use strict';
+ const $=id=>document.getElementById(id), status=$('status'), setup=$('setup'), pending=$('pending');
+ function show(text,kind){status.textContent=text;status.className='notice '+(kind||'')}
+ async function refresh(){
+   try{
+    const res=await fetch('../api/delegated-status',{cache:'no-store',credentials:'same-origin'});
+    const json=await res.json();
+    setup.hidden=!!json.active;pending.hidden=!json.active;
+    if(json.active)show('iPhone autorizado para ATALÍA'+(json.syncReady?'':' · acceso personal y sincronización aún no habilitados'),json.syncReady?'good':'');
+    else show(res.status===503?'El servidor todavía no está configurado por el administrador.':'Este iPhone necesita activación del administrador.',res.status===503?'':'error');
+   }catch(_){setup.hidden=true;pending.hidden=true;show('No se pudo contactar al servidor. Revisa la conexión a internet.','error')}
+ }
+ $('check').onclick=refresh;
+ $('activate').onclick=async()=>{
+  const code=$('token').value.trim();if(!/^[a-f0-9]{64}$/i.test(code)){show('Código inválido. Solicítalo al administrador.','error');return}
+  $('activate').disabled=true;
+  try{
+   const res=await fetch('../api/delegated-activate',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({activationToken:code})});
+   $('token').value='';
+   if(!res.ok){show('No se autorizó este iPhone. Confirma la configuración con el administrador.','error');return}
+   await refresh()
+  }catch(_){show('Sin conexión. No se ha activado el iPhone.','error')}
+  finally{$('activate').disabled=false}
+ };
+ $('signout').onclick=async()=>{
+  await fetch('../api/delegated-logout',{method:'POST',credentials:'same-origin'}).catch(()=>{});
+  await refresh()
+ };
+ refresh();
+ if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(()=>{});
+ </script>
+</body>
+</html>

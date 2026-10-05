@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import crypto from "node:crypto";
 
 function splitEmails(value) {
   if (!value) return [];
@@ -27,17 +28,68 @@ function safeAttachments(value) {
   }).filter(Boolean);
 }
 
-export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+function safeEqual(a, b) {
+  const aa = Buffer.from(String(a || ""));
+  const bb = Buffer.from(String(b || ""));
+  return aa.length === bb.length && crypto.timingSafeEqual(aa, bb);
+}
+
+async function authorize(req) {
+  const authorization = String(req.headers.authorization || "");
+  const bearer = /^Bearer\s+(.+)$/i.exec(authorization)?.[1]?.trim() || "";
+  const internal = String(req.headers["x-atalia-internal-key"] || "");
+  const internalExpected = process.env.MAILER_INTERNAL_KEY || "";
+
+  if (internalExpected && internal && safeEqual(internal, internalExpected)) {
+    return { mode: "internal" };
+  }
+
+  if (!bearer) return null;
+  const allowedAccount = String(process.env.DROPBOX_ALLOWED_ACCOUNT_ID || "").trim();
+  if (!allowedAccount) return null;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  try {
+    const response = await fetch("https://api.dropboxapi.com/2/users/get_current_account", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${bearer}` },
+      signal: controller.signal
+    });
+    if (!response.ok) return null;
+    const account = await response.json();
+    if (String(account?.account_id || "") !== allowedAccount) return null;
+    return { mode: "dropbox", accountId: account.account_id };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function applyCors(req, res) {
+  const origin = String(req.headers.origin || "");
+  if (origin) res.setHeader("Access-Control-Allow-Origin", origin);
+  else res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Vary", "Origin");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+}
+
+export default async function handler(req, res) {
+  applyCors(req, res);
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ ok:false, error:"method_not_allowed" });
 
-  const to = splitEmails(req.body?.to);
-  const cc = splitEmails(req.body?.cc);
-  const subject = String(req.body?.subject || "").trim();
-  const body = String(req.body?.body || "").trim();
+  const auth = await authorize(req);
+  if (!auth) return res.status(401).json({ ok:false, error:"unauthorized" });
+
+  const to = splitEmails(req.body?.to).slice(0, 10);
+  const cc = splitEmails(req.body?.cc).slice(0, 10);
+  const subject = String(req.body?.subject || "").trim().slice(0, 250);
+  const body = String(req.body?.body || "").trim().slice(0, 50000);
   const attachments = safeAttachments(req.body?.attachmentFiles);
 
   if (!to.length || to.some(v => !validEmail(v))) {
@@ -81,10 +133,11 @@ export default async function handler(req, res) {
       messageId:info.messageId,
       accepted:info.accepted,
       rejected:info.rejected,
-      attachments:attachments.map(a => a.filename)
+      attachments:attachments.map(a => a.filename),
+      auth:auth.mode
     });
   } catch (err) {
     console.error("MAIL_SEND_ERROR", err);
-    return res.status(502).json({ ok:false, error:"send_failed", detail:err?.message || "Unknown error" });
+    return res.status(502).json({ ok:false, error:"send_failed" });
   }
 }

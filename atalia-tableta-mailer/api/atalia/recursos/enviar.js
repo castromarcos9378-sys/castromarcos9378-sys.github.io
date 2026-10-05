@@ -10,6 +10,23 @@ function validEmail(v) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }
 
+function safeAttachments(value) {
+  if (!Array.isArray(value)) return [];
+  const allowed = new Set([
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/pdf"
+  ]);
+  return value.slice(0, 4).map(a => {
+    const filename = String(a?.filename || "adjunto").replace(/[\\/]/g, "_").slice(0, 120);
+    const contentType = String(a?.contentType || "");
+    const base64 = String(a?.base64 || "").replace(/\s+/g, "");
+    if (!filename || !allowed.has(contentType) || !/^[A-Za-z0-9+/=]+$/.test(base64)) return null;
+    const content = Buffer.from(base64, "base64");
+    if (!content.length || content.length > 5 * 1024 * 1024) return null;
+    return { filename, contentType, content };
+  }).filter(Boolean);
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -21,6 +38,7 @@ export default async function handler(req, res) {
   const cc = splitEmails(req.body?.cc);
   const subject = String(req.body?.subject || "").trim();
   const body = String(req.body?.body || "").trim();
+  const attachments = safeAttachments(req.body?.attachmentFiles);
 
   if (!to.length || to.some(v => !validEmail(v))) {
     return res.status(400).json({ ok:false, error:"invalid_to" });
@@ -54,14 +72,16 @@ export default async function handler(req, res) {
       to:to.join(", "),
       cc:cc.length ? cc.join(", ") : undefined,
       subject,
-      text:body || "Se remite requerimiento de Atalía Villas."
+      text:body || "Se remite requerimiento de Atalía Villas.",
+      attachments
     });
 
     return res.status(200).json({
       ok:true,
       messageId:info.messageId,
       accepted:info.accepted,
-      rejected:info.rejected
+      rejected:info.rejected,
+      attachments:attachments.map(a => a.filename)
     });
   } catch (err) {
     console.error("MAIL_SEND_ERROR", err);

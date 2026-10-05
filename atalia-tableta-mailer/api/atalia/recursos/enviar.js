@@ -45,6 +45,19 @@ async function authorize(req) {
   }
 
   if (!bearer) return null;
+
+  const tabletDigest = String(process.env.TABLET_DEVICE_TOKEN_SHA256 || "").trim().toLowerCase();
+  if (/^[a-f0-9]{64}$/.test(tabletDigest)) {
+    const actual = crypto.createHash("sha256").update(bearer).digest("hex");
+    if (safeEqual(actual, tabletDigest)) {
+      const origin = String(req.headers.origin || "").toLowerCase();
+      const allowedLocal = origin === "null";
+      const allowedWeb = origin === "https://atalia-tableta-mailer.vercel.app";
+      if (allowedLocal || allowedWeb) return { mode: "tablet_device" };
+      return null;
+    }
+  }
+
   const allowedAccount = String(process.env.DROPBOX_ALLOWED_ACCOUNT_ID || "").trim();
   if (!allowedAccount) return null;
 
@@ -68,9 +81,10 @@ async function authorize(req) {
 }
 
 function applyCors(req, res) {
-  const origin = String(req.headers.origin || "");
-  if (origin) res.setHeader("Access-Control-Allow-Origin", origin);
-  else res.setHeader("Access-Control-Allow-Origin", "*");
+  const origin = String(req.headers.origin || "").toLowerCase();
+  if (origin === "null" || origin === "https://atalia-tableta-mailer.vercel.app") {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
   res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");

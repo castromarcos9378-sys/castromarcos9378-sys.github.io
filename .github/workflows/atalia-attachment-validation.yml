@@ -1,0 +1,19 @@
+name: Atalia attachment validation
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/atalia-attachment-validation.yml"
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send attachment test email
+        run: |
+          for i in $(seq 1 18); do
+            if curl --fail --silent --show-error "https://atalia-tableta-mailer.vercel.app/api/atalia-attachment-check-93c18b4f"; then
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1

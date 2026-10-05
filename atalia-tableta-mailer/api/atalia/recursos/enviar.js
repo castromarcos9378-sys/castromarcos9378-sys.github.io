@@ -92,9 +92,50 @@ function applyCors(req, res) {
   res.setHeader("X-Content-Type-Options", "nosniff");
 }
 
+function bridgeHtml() {
+  return `<!doctype html><meta charset="utf-8"><title>Atalia Mail Bridge</title><script>
+  addEventListener("message", async (event) => {
+    if (event.origin !== "null" && event.origin !== "https://atalia-tableta-mailer.vercel.app") return;
+    const m = event.data || {};
+    if (m.type !== "atalia-mail-send" || !m.requestId || !m.token || !m.payload) return;
+    try {
+      const response = await fetch(location.pathname, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + m.token
+        },
+        body: JSON.stringify(m.payload)
+      });
+      const out = await response.json().catch(() => ({}));
+      event.source.postMessage({
+        type: "atalia-mail-result",
+        requestId: m.requestId,
+        ok: response.ok,
+        status: response.status,
+        out
+      }, "*");
+    } catch (err) {
+      event.source.postMessage({
+        type: "atalia-mail-result",
+        requestId: m.requestId,
+        ok: false,
+        status: 0,
+        out: { error: "bridge_failed" }
+      }, "*");
+    }
+  });
+  <\/script>`;
+}
+
 export default async function handler(req, res) {
   applyCors(req, res);
   if (req.method === "OPTIONS") return res.status(204).end();
+  if (req.method === "GET" && String(req.query?.bridge || "") === "1") {
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.setHeader("Content-Security-Policy", "default-src 'none'; script-src 'unsafe-inline'; connect-src 'self'");
+    return res.status(200).send(bridgeHtml());
+  }
   if (req.method !== "POST") return res.status(405).json({ ok:false, error:"method_not_allowed" });
 
   const auth = await authorize(req);

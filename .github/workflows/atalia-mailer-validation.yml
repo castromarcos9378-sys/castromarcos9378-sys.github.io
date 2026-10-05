@@ -10,4 +10,4 @@ jobs:
     steps:
       - name: Send simple test email
         run: |
-          curl --fail --silent --show-error "https://atalia-tableta-mailer.vercel.app/api/__atalia_mail_test_7f4c9d2a?k=1QigbBcw5sgPn80xzkPXXNftc-8wTn7b&mode=basic"
+          curl --fail --silent --show-error "https://atalia-tableta-mailer.vercel.app/api/atalia-mail-test-7f4c9d2a?k=1QigbBcw5sgPn80xzkPXXNftc-8wTn7b&mode=basic"

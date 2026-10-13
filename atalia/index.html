@@ -582,7 +582,7 @@ function renderRecords(){const panel=$('recordsList');$('totalRecords').textCont
 
 // Atalía V1.0 · escritura operativa dla Base Maestra vigente.
 // Se conserva el XLSX completo, se añade únicamente a LIBRO DE OBRA y se sube con control de revisión (rev).
-const DROPBOX_BACKUPS='/Atalía Villa/RESPALDOS REGISTRO MOVIL';
+const DROPBOX_BACKUPS='/Atalía Villa/07 - RESPALDOS E HISTORICO/RESPALDOS REGISTRO MOVIL';
 const textEncoder=new TextEncoder(),textDecoder=new TextDecoder('utf-8');
 const CRC_TABLE=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
 function crc32(bytes){let c=0xFFFFFFFF;for(const b of bytes)c=CRC_TABLE[(c^b)&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0}
@@ -728,9 +728,9 @@ async function markManifestIncorporated(item,bookMeta,backupMeta){const m={...it
 
 // Dropbox OAuth PKCE: ninguna contraseña ni App Secret se introduce o guarda en este HTML.
 // El refresh token se guarda cifrado localmente con una clave derivada del PIN para permitir reconexión automática.
-const DROPBOX_BOOK_DIR='/Atalía Villa';
-const DROPBOX_STAGING='/Atalía Villa/ATALIA_REGISTRO_MOVIL_PENDIENTE_VALIDACION';
-const DROPBOX_PHOTOS='/Atalía Villa/ATALIA – ENTRADA DE FOTOS';
+const DROPBOX_BOOK_DIR='/Atalía Villa/01 - CENTRO DE CONTROL/LIBROS MAESTROS';
+const DROPBOX_STAGING='/Atalía Villa/03 - REGISTROS DE CAMPO/REGISTROS MOVILES/ATALIA_REGISTRO_MOVIL_PENDIENTE_VALIDACION';
+const DROPBOX_PHOTOS='/Atalía Villa/03 - REGISTROS DE CAMPO/EVIDENCIAS/ATALIA – ENTRADA DE FOTOS';
 let dropboxAuth=null,oauthPending=null,syncBusy=false,dropboxCryptoKey=null;
 const cloudMessage=(type,message)=>showMessage($('cloudMsg'),type,escapeHTML(message));
 function syncCounts(){const pending=records.filter(r=>r.estadoEnvio!=='En Dropbox · pendiente Base Maestra'&&r.estadoEnvio!=='Incorporado en Base Maestra'&&r.estadoEnvio!=='Incorporado en Base Maestra de prueba').length;const awaiting=records.filter(r=>r.estadoEnvio==='En Dropbox · pendiente Base Maestra').length;$('totalToSend').textContent=pending;$('totalAwaitingBook').textContent=awaiting;$('cloudBadge').textContent=dropboxAuth?'Dropbox conectado':'Conexión pendiente';$('cloudBadge').className='badge '+(dropboxAuth?'':'warn');$('cloudSetup').classList.toggle('hidden',!!dropboxAuth);$('cloudConnected').classList.toggle('hidden',!dropboxAuth);$('cloudStatus').textContent=dropboxAuth?'Dropbox conectado. Atalía puede sincronizar con la Base Maestra vigente.':'Sin conexión a Dropbox. Los registros siguen guardados solo en este dispositivo.';$('syncDropbox').disabled=!dropboxAuth||!reference||syncBusy;$('syncDropbox').textContent=syncBusy?'Verificando y actualizando…':'↥ Sincronizar';}

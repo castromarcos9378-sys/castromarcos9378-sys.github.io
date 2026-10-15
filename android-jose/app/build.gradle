@@ -1,0 +1,13 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.ecmconstructores.atalia.jose'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'com.ecmconstructores.atalia.jose'
+        minSdk 24
+        targetSdk 28
+        versionCode 1
+        versionName '1.0'
+    }
+    buildTypes { release { minifyEnabled false } }
+}

@@ -41,7 +41,7 @@ async function rpc(project,endpoint,arg){const token=await accessToken(project);
 async function metadata(project,path){return rpc(project,'files/get_metadata',{path:assertPath(project,path)});}
 async function download(project,path){
  const token=await accessToken(project),r=await fetch('https://content.dropboxapi.com/2/files/download',{
- method:'POST',headers:{Authorization:'Bearer '+token,'Dropbox-API-Arg':JSON.stringify({path:assertPath(project,path)})}});
+ method:'POST',headers:{Authorization:'Bearer '+token,'Dropbox-API-Arg':headerJson({path:assertPath(project,path)})}});
  if(!r.ok)throw dbxError(r.status,await r.text());return Buffer.from(await r.arrayBuffer());
 }
 async function upload(project,path,data,revision){

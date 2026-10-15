@@ -525,7 +525,7 @@ function activityProgressComplete(v,activity,subs){
 }
 function renderPending(){
  const v=$('pendingVilla').value,view=$('pendingContent');$('pendingTipo').textContent=v?(villas[v]||'Sin tipología'):'Selecciona una villa';
- if(!reference){view.innerHTML='<div class="noitems">Conecta Dropbox o carga la Base Maestra para consultar pendientes reales.</div>';return}
+ if(!reference){view.innerHTML='<div class="noitems">Base Maestra no disponible. <button id="retryReference" type="button" class="btn primary">Reintentar lectura</button><p id="referenceError" role="status"></p></div>';document.getElementById('retryReference').onclick=async()=>{const msg=document.getElementById('referenceError');msg.textContent='Consultando servidor...';try{await fieldReference()}catch(e){msg.textContent=String(e.message||e)}};return}
  if(!v){view.innerHTML='<div class="noitems">Selecciona una villa para consultar las partidas.</div>';return}
  view.replaceChildren();
  const info=document.createElement('div');info.className='infobox pending-source';info.textContent='Avance según registros y catálogo de la Base Maestra. Los controles de cubicación sin peso se muestran por separado: ausencia de registro NO significa obra sin ejecutar.';view.append(info);

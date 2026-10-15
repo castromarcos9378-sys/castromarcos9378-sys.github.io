@@ -528,8 +528,6 @@ function renderPending(){
  if(!reference){view.innerHTML='<div class="noitems">Base Maestra no disponible. <button id="retryReference" type="button" class="btn primary">Reintentar lectura</button><p id="referenceError" role="status"></p></div>';document.getElementById('retryReference').onclick=async()=>{const msg=document.getElementById('referenceError');msg.textContent='Consultando servidor...';try{await fieldReference()}catch(e){msg.textContent=String(e.message||e)}};return}
  if(!v){view.innerHTML='<div class="noitems">Selecciona una villa para consultar las partidas.</div>';return}
  view.replaceChildren();
- const info=document.createElement('div');info.className='infobox pending-source';info.textContent='Avance según registros y catálogo de la Base Maestra. Los controles de cubicación sin peso se muestran por separado: ausencia de registro NO significa obra sin ejecutar.';view.append(info);
- let totalMissing=0,totalEconomicUnverified=0;
  for(const [activity,subs0] of catalog){
   const weighted=weightedSubactivities(activity,subs0),extra=subs0.filter(s=>s!=='COMPLETA'&&Number(reference.subWeights?.[activity]?.[s]||0)===0);
   const fullRecorded=isCompleted(statusFor(v,activity,'COMPLETA')),progressComplete=activityProgressComplete(v,activity,weighted);
@@ -540,10 +538,9 @@ function renderPending(){
   badge.textContent=progressComplete?'AVANCE COMPLETO':weighted.length?done+'/'+weighted.length+' HECHAS':'REGISTRO OPERATIVO';
   summary.append(title,badge);details.append(summary);
   const missing=fullRecorded?[]:weighted.filter(s=>!isCompleted(statusFor(v,activity,s)));
-  totalMissing+=missing.length;
   if(progressComplete){
    const row=document.createElement('div');row.className='item';
-   row.innerHTML='<div><strong>Avance completo según Base Maestra</strong><br><span class="soft">No volver a registrar las subactividades ya completadas.</span></div>';
+   row.innerHTML='<div><strong>Actividades registradas como completadas</strong></div>';
    details.append(row);
   }
   for(const sub of missing){
@@ -558,16 +555,12 @@ function renderPending(){
   // No confundir registro económico con el avance físico. Conservar incluso cuando el nivel está completo.
   const extraMissing=fullRecorded?[]:extra.filter(s=>!isCompleted(statusFor(v,activity,s)));
   if(extraMissing.length){
-   totalEconomicUnverified+=extraMissing.length;
-   const note=document.createElement('div');note.className='infobox';
-   note.innerHTML='<strong>CONTROL DE CUBICACIÓN · sin peso en avance</strong><br>Sin registro individual confirmado. Puede estar ejecutado: verifica la evidencia y el pago antes de registrar; no se declara como trabajo físico pendiente.';
-   details.append(note);
    for(const sub of extraMissing){
     const div=document.createElement('div');div.className='item';
     const label=document.createElement('div'),strong=document.createElement('strong');strong.textContent=sub;
-    const soft=document.createElement('span');soft.className='soft';soft.textContent='REGISTRO ECONÓMICO POR VERIFICAR · avance no afectado';
+    const soft=document.createElement('span');soft.className='soft';soft.textContent='Sin confirmación en el registro';
     label.append(strong,document.createElement('br'),soft);
-    const button=document.createElement('button');button.type='button';button.className='btn outline';button.textContent='Revisar →';
+    const button=document.createElement('button');button.type='button';button.className='btn outline';button.textContent='Registrar →';
     button.onclick=()=>{$('villa').value=v;onVilla();$('actividad').value=activity;onActivity();$('subactividad').value=sub;refreshExisting();switchTab('registro')};
     div.append(label,button);details.append(div);
    }
@@ -575,9 +568,6 @@ function renderPending(){
   
   view.append(details);
  }
- const foot=document.createElement('div');foot.className='warnbox';
- foot.textContent='Pendientes de avance: '+totalMissing+'. Controles económicos sin registro individual: '+totalEconomicUnverified+'. Un control sin registrar no significa trabajo sin ejecutar.';
- view.append(foot)
 }
 let pendingRefreshInFlight=false,pendingRefreshAt=0;
 async function refreshPendingReference(){

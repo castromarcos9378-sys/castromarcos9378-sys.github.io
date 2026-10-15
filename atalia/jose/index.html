@@ -313,7 +313,7 @@ function fillSelect(el,values,placeholder){const prior=el.value;el.replaceChildr
 function hydrateLists(){const numbers=Object.keys(villas).map(Number).sort((a,b)=>a-b);fillSelect($('villa'),numbers,'Seleccionar villa');fillSelect($('pendingVilla'),numbers,'Seleccionar villa');fillSelect($('actividad'),catalog.map(x=>x[0]),'Seleccionar actividad');onActivity();onVilla()}
 function onVilla(){const n=$('villa').value;$('tipo').textContent=n?(villas[n]||'No disponible'):'Selecciona una villa';refreshExisting()}
 function onActivity(){const activity=$('actividad').value;let group=catalog.find(x=>x[0]===activity);fillSelect($('subactividad'),group?group[1]:[],'Seleccionar subactividad');$('subactividad').disabled=!group;$('specialtyBox').classList.add('hidden');refreshExisting()}
-const recordKey=(v,a,s)=>`${v}|${a} | ${s}`;
+const recordKey=(v,a,s)=>`${v}|${a}|${s}`;
 function legacyCompletionConflict(v,a,s){return (LEGACY_CONFLICTS[a]?.[s]||[]).filter(old=>isCompleted(history.get(recordKey(v,a,old))))}
 function refreshExisting(){
  const v=$('villa').value,a=$('actividad').value,s=$('subactividad').value,box=$('existingState');

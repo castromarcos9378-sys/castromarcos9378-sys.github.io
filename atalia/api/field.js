@@ -146,6 +146,7 @@ module.exports=async function field(req,res){
  try{
   const op=String(req.query?.op||'');
   const method=req.method;
+  if(op==='health'&&method==='GET')return respond(res,200,{service:'atalia-jose',preview:process.env.VERCEL_ENV==='preview',configured:{session:!!process.env.FIELD_SESSION_SECRET,invites:!!process.env.FIELD_INVITES_JSON,dropbox:!!(process.env.FIELD_ATALIA_APP_KEY&&process.env.FIELD_ATALIA_APP_SECRET&&process.env.FIELD_ATALIA_REFRESH_TOKEN)}});
   if(['activate','login','recover-jose','commit','photo-ticket','logout'].includes(op)){
    if(method!=='POST')fail('Método incorrecto',405);
    if(!auth.checkOrigin(req))fail('Origen no permitido',403);

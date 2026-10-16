@@ -146,7 +146,7 @@ module.exports=async function field(req,res){
  try{
   const op=String(req.query?.op||'');
   const method=req.method;
-  if(['activate','login','recover-jose','commit','photo-ticket','logout'].includes(op)){
+  if(['activate','login','recover-jose','commit','photo-ticket','logout','device-register','device-challenge','device-login'].includes(op)){
    if(method!=='POST')fail('Método incorrecto',405);
    if(!auth.checkOrigin(req))fail('Origen no permitido',403);
   }else if(method!=='GET')fail('Método incorrecto',405);
@@ -154,6 +154,9 @@ module.exports=async function field(req,res){
   if(op==='login')return respond(res,200,await auth.login(req,res,limitBody(req)));
   if(op==='recover-jose')return respond(res,200,await auth.recoverJose(req,res,limitBody(req)));
   if(op==='logout')return respond(res,200,auth.logout(res));
+  if(op==='device-register')return respond(res,200,await auth.deviceRegister(req,limitBody(req)));
+  if(op==='device-challenge')return respond(res,200,await auth.deviceChallenge(req,limitBody(req)));
+  if(op==='device-login')return respond(res,200,await auth.deviceLogin(req,res,limitBody(req)));
   const project=String(req.query?.project||'');
   dbx.projectConfig(project);
   const who=await auth.assertSession(req,project);

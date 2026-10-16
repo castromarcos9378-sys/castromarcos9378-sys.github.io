@@ -150,9 +150,9 @@ async function recoverJose(req,res,body){
  if((process.env.FIELD_DISABLED_USERS||'').split(',').map(x=>x.trim()).includes(who.id))
   throw Object.assign(Error('Acceso revocado por el administrador'),{status:403});
  let invites;try{invites=JSON.parse(process.env.FIELD_INVITES_JSON||'null');}catch{invites=null;}
- const digest=invites?.[who.id];
- if(!digest||!/^[a-f0-9]{64}$/i.test(digest)||!timeSafe(sha(invite),digest))
-  throw Object.assign(Error('La invitación no es válida'),{status:403});
+ const digestCandidates=[invites?.[who.id],process.env.FIELD_JOSE_RECOVERY_DIGEST].filter(d=>typeof d==='string'&&/^[a-f0-9]{64}$/i.test(d));
+ const digest=digestCandidates.find(d=>timeSafe(sha(invite),d));
+ if(!digest)throw Object.assign(Error('La invitación no es válida'),{status:403});
  const current=await getProfile(who);
  if(!current)throw Object.assign(Error('Primero debes activar tu cuenta'),{status:409});
  const p=current.profile;

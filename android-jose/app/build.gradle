@@ -9,5 +9,5 @@ android {
         versionCode 2
         versionName '1.1'
     }
-    buildTypes { release { minifyEnabled false } }
+    buildTypes { debug { signingConfig signingConfigs.debug; v1SigningEnabled true; v2SigningEnabled true }; release { minifyEnabled false } }
 }

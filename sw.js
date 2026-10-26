@@ -1,5 +1,5 @@
 // Cada despliegue cambia este identificador. No se borran cachés de Atalía.
-const CACHE='daos-registro-v11-1-actualizaciones-20261026';
+const CACHE='daos-registro-v11-2-especialidades-20261026';
 const CORE=['./','./index.html','./manifest.webmanifest','./daos-icon.svg','./sw.js'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE))));
 self.addEventListener('message',e=>{if(e.data?.type==='DAOS_ACTIVAR_ACTUALIZACION')self.skipWaiting()});

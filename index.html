@@ -660,7 +660,7 @@ async function markManifestIncorporated(item,bookMeta,backupMeta){const m={...it
 
 // Dropbox OAuth PKCE: ninguna contraseña ni App Secret se introduce o guarda en este HTML.
 // El refresh token se guarda cifrado localmente con una clave derivada del PIN para permitir reconexión automática.
-const DROPBOX_BOOK_DIR='/Daos Villas';
+const DROPBOX_BOOK_DIR='/Daos Villas/01_OPERACION';
 const DROPBOX_STAGING='/Daos Villas/DAOS_REGISTRO_MOVIL_PENDIENTE_VALIDACION';
 const DROPBOX_PHOTOS='/Daos Villas/DAOS – ENTRADA DE FOTOS';
 let dropboxAuth=null,oauthPending=null,syncBusy=false,dropboxCryptoKey=null;
@@ -689,7 +689,7 @@ async function ensurePhotoDestination(){try{const m=await dropboxRPC('files/get_
 async function getLatestBookFilename(){
  const entries=await listFolderAll(DROPBOX_BOOK_DIR);
  const valid=entries.find(e=>e['.tag']==='file'&&e.name==='DAOS_LIBRO_MAESTRO_V08.xlsx');
- if(!valid)throw Error('Falta /Daos Villas/DAOS_LIBRO_MAESTRO_V08.xlsx en Dropbox; se mantiene protegido el libro anterior.');
+ if(!valid)throw Error('Falta /Daos Villas/01_OPERACION/DAOS_LIBRO_MAESTRO_V08.xlsx en Dropbox; se mantiene protegido el libro anterior.');
  return valid.name;
 }
 async function loadRemoteReference(notice=true){if(!dropboxAuth)throw Error('Conecta Dropbox antes.');const fname=await getLatestBookFilename();const path=DROPBOX_BOOK_DIR+'/'+fname;const meta=await dropboxRPC('files/get_metadata',{path});if(meta['.tag']!=='file')throw Error('El Libro Maestro no es un archivo.');if(meta.size>15*1024*1024)throw Error('Libro Maestro supera 15 MB; detener carga.');const data=sourceFromSheets(await parseWorkbook(await dropboxDownload(path)));const updated={filename:fname,loaded:new Date().toISOString(),remoteRev:meta.rev,remotePath:path,...data};await idbPut('meta',updated,'reference');reference=updated;villas=data.villas;catalog=data.catalog;history=new Map(data.history);technicalDetails=data.technicalDetails||[];hydrateLists();renderPending();renderRecords();updateSource();syncCounts();if(notice)cloudMessage('ok','Referencia '+fname+' revisada desde Dropbox. '+data.rows+' filas históricas leídas. Ningún Excel modificado.');return updated}

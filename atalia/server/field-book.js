@@ -127,7 +127,20 @@ function daosInfo(b){
   const r=cellsAsRecord(row,ch.map),a=String(r.actividad||'').trim(),s=String(r.subactividad||'').trim();
   if(!a||!s)continue;let g=groups.find(x=>x[0]===a);if(!g){g=[a,[]];groups.push(g);}if(!g[1].includes(s))g[1].push(s);
  }
- if(groups.length!==7||groups.reduce((n,g)=>n+g[1].length,0)!==33)err('DAOS: el catálogo no coincide con V07');
+ if(groups.length!==7||groups.reduce((n,g)=>n+g[1].length,0)!==37)err('DAOS: el catálogo no coincide con V08');
+ const detailSheet=findSheet(b.sheets,'DETALLES V08');
+ const dh=header(detailSheet,b.ss,['Código','Actividad','Subactividad','Detalle técnico','Unidad prop.']);
+ const details=[];const codes=new Set();
+ for(const row of dataRows(detailSheet,b.ss,dh.no)){
+  const d=cellsAsRecord(row,dh.map),code=String(d.codigo||'').trim(),a=String(d.actividad||'').trim(),s=String(d.subactividad||'').trim();
+  if(!code)continue;
+  if(!/^DAOS-P\d{3}$/.test(code)||codes.has(code)||!groups.some(g=>g[0]===a&&g[1].includes(s)))
+    err('DAOS: código de detalle duplicado o fuera del catálogo V08');
+  codes.add(code);details.push({codigo:code,actividad:a,subactividad:s,
+   detalle:String(d['detalle tecnico']||'').trim(),unidad:String(d['unidad prop.']||'').trim(),
+   estado:String(d.estado||'').trim()});
+ }
+ if(details.length!==76)err('DAOS: los 76 detalles V08 no están completos');
  const log=findSheet(b.sheets,'LIBRO DE OBRA'),lh=header(log,b.ss,['ID','Tipo','Villa','Actividad','Subactividad','Estado','Referencia','Origen','Vigente']);
  const history=new Map(),rows=dataRows(log,b.ss,lh.no),ids=new Set(),max={id:0,no:lh.no};
  for(const row of rows){
@@ -136,20 +149,27 @@ function daosInfo(b){
   const marker=String(r.referencia||'').match(/Registro m[oó]vil\s*[·:-]\s*([a-z0-9_-]+)/i);if(marker)ids.add(marker[1]);
   if(!v[n]||!a||!s||a==='Sin iniciar'||!groups.some(g=>g[0]===a&&g[1].includes(s)))continue;
   if(r.vigente==='0')continue;
-  const key=n+'|'+a+'|'+s,cur=history.get(key);
+  const code=String(r['codigo detalle v08']||'').trim();
+  if(code&&!codes.has(code)&&!['DAOS-ESP-ELE','DAOS-ESP-SAN','DAOS-ESP-POT'].includes(code))
+   err('DAOS: el histórico contiene un código de detalle desconocido');
+  if(code&&code.startsWith('DAOS-ESP-')&&s!=='Instalaciones')
+   err('DAOS: código de especialidad fuera de Instalaciones');
+  if(code&&code.startsWith('DAOS-P')&&!details.some(d=>d.codigo===code&&d.actividad===a&&d.subactividad===s))
+   err('DAOS: código de detalle asociado a otra actividad');
+  const key=n+'|'+a+' | '+s+(code?'|'+code:''),cur=history.get(key);
   if(!cur||id>=cur.id)history.set(key,{id,estado:r.estado||'',origen:r.origen||'',observacion:r['observacion']||r['observación']||'',
      referencia:r.referencia||'',fechaInicio:dateISO(r['fecha inicio']),fechaFin:dateISO(r['fecha terminación'])});
  }
- return {project:'daos',villas:v,catalog:groups,history:[...history],rows:rows.length,
+ return {project:'daos',bookVersion:8,villas:v,catalog:groups,details,history:[...history],rows:rows.length,
   stageSummary,pendingViews:[],hasPendingSheet:false,ids,max,sheetName:'LIBRO DE OBRA',head:lh,logRows:rows};
 }
 function readBook(bytes,project){
  const b=books(unzip(bytes));return {b,info:project==='atalia'?ataliaInfo(b):project==='daos'?daosInfo(b):err('Proyecto inválido',403)};
 }
 function publicReference(info,filename){
- const fields=['villas','catalog','rows'];
+ const fields=['villas','catalog','rows','bookVersion'];
  if(info.project==='atalia')fields.push('activityWeights','subWeights','pendingViews');
- else fields.push('stageSummary','pendingViews','hasPendingSheet');
+ else fields.push('stageSummary','pendingViews','hasPendingSheet','details');
  const out={filename,loaded:new Date().toISOString()};
  for(const field of fields)out[field]=info[field]??(field==='pendingViews'?[]:null);
  // Personal devices only need status and provenance to prevent duplicate work.
@@ -171,7 +191,30 @@ function validated(record,info){
  if(info.project==='atalia'&&s==='COMPLETA'&&state!=='Completada')err('COMPLETA requiere estado Completada');
  if(info.project==='atalia'&&a==='CONEXIONES EXTERNAS'&&s!=='Potable')err('Solo potable está habilitada');
  if(String(r.observacion||'').length>1200)err('Observación demasiado larga');
- const map=new Map(info.history),key=n+'|'+a+'|'+s,prior=map.get(key),done=String(prior?.estado||'');
+ if(String(r.notaTecnica||'').length>500)err('Nota técnica demasiado larga');
+ let detail=null,quantity=null;
+ if(info.project==='daos'){
+  const code=String(r.codigoDetalle||'').trim();
+  const special={'Eléctricas':['DAOS-ESP-ELE','Instalaciones eléctricas'],
+   'Sanitarias':['DAOS-ESP-SAN','Instalaciones sanitarias'],
+   'Agua potable':['DAOS-ESP-POT','Instalaciones de agua potable']};
+  const blocks=new Set(['DAOS-P019','DAOS-P020','DAOS-P034','DAOS-P035']);
+  const isBlocks=s==='Mampostería'&&(a==='1er Nivel'||a==='2do Nivel');
+  if(s==='Instalaciones'){
+   const chosen=special[String(r.especialidad||'')];
+   if(!chosen||code!==chosen[0])err('DAOS: selecciona Eléctricas, Sanitarias o Agua potable');
+   detail={codigo:code,detalle:chosen[1],unidad:''};
+  }else if(isBlocks){
+   detail=info.details.find(d=>d.codigo===code&&blocks.has(code)&&d.actividad===a&&d.subactividad===s);
+   if(!detail)err('DAOS: selecciona bloque de 10 o 15 cm');
+  }else if(code)err('DAOS: este detalle aún no está habilitado para registro');
+  if(r.cantidadMedida!==undefined&&r.cantidadMedida!==null&&r.cantidadMedida!==''){
+   quantity=Number(r.cantidadMedida);
+   if(!Number.isFinite(quantity)||quantity<0||quantity>100000000)err('Cantidad medida inválida');
+  }
+ }
+ const map=new Map(info.history),key=info.project==='daos'?n+'|'+a+' | '+s+(detail?'|'+detail.codigo:''):n+'|'+a+'|'+s,
+  prior=map.get(key),done=String(prior?.estado||'');
  if(info.project==='atalia'){
   if(done==='Completada')err('Trabajo ya completado. No se registrará de nuevo',409);
   if(s!=='Rastreado / Regleado'&&map.get(n+'|'+a+'|COMPLETA')?.estado==='Completada')err('Actividad ya completa',409);
@@ -180,7 +223,7 @@ function validated(record,info){
   for(const legacy of aliases[a]?.[s]||[])if(map.get(n+'|'+a+'|'+legacy)?.estado==='Completada')
     err('La partida figura completada en el histórico con el nombre anterior',409);
  }else if(done==='Realizado'&&!/inferid/i.test(prior?.origen||''))err('DAOS: partida realizada y documentada',409);
- return {n,a,s,start,end,prior};
+ return {n,a,s,start,end,prior,detail,quantity};
 }
 function setCell(doc,row,colNo,rowNo,value,style){
  const ref=colName(colNo)+rowNo;
@@ -231,12 +274,15 @@ function write(bytes,project,record,who){
  const h=info.head.map;
  const safeObs=String(r.observacion||'').trim();
  const observation=(safeObs?safeObs+' | ':'')+'Registrado por: '+who.name;
- const auditCol=project==='atalia'?14:15;
- // This is a new right-hand column: it does not displace any pre-existing formula.
- const headCell=children(info.head.row,'c').find(c=>col(c.getAttribute('r'))===auditCol);
- if(headCell&&rowMap(info.head.row,b.ss).get(auditCol)&&lower(rowMap(info.head.row,b.ss).get(auditCol))!=='registrado por')
+ // DAOS V08 reserves O:S for measurement details. Audit stays in Observación;
+ // adding a column here would overwrite the technical code and corrupt calculations.
+ const auditCol=project==='atalia'?14:null;
+ if(auditCol){
+  const headCell=children(info.head.row,'c').find(c=>col(c.getAttribute('r'))===auditCol);
+  if(headCell&&rowMap(info.head.row,b.ss).get(auditCol)&&lower(rowMap(info.head.row,b.ss).get(auditCol))!=='registrado por')
    err('No se puede crear la columna de auditoría: existe otra cabecera');
- setCell(doc,info.head.row,auditCol,info.head.no,'Registrado por',style(auditCol));
+  setCell(doc,info.head.row,auditCol,info.head.no,'Registrado por',style(auditCol));
+ }
  if(project==='atalia'){
   const aw=info.activityWeights[fields.a],sw=fields.s==='COMPLETA'?aw:Number(info.subWeights[fields.a]?.[fields.s]??0);
   const vals={'id registro':id,villa:fields.n,'tipo de villa':r.tipo,'actividad general':fields.a,subactividad:fields.s,
@@ -248,7 +294,10 @@ function write(bytes,project,record,who){
   const vals={id,tipo:r.tipo,villa:fields.n,actividad:fields.a,subactividad:fields.s,
     estado:r.estado,'fecha inicio':dateSerial(fields.start),'fecha terminación':fields.end?dateSerial(fields.end):'',
     antes:fields.prior?.estado||'',observación:observation,origen:'Registro móvil',
-    referencia:'Registro móvil · '+r.id,clave:fields.n+'|'+fields.a+'|'+fields.s,vigente:1};
+    referencia:'Registro móvil · '+r.id,clave:fields.n+'|'+fields.a+'|'+fields.s,vigente:1,
+    'codigo detalle v08':fields.detail?.codigo||'','detalle v08':fields.detail?.detalle||'',
+    'cantidad medida':fields.quantity??'','unidad':fields.detail?.unidad||'',
+    'nota tecnica':String(r.notaTecnica||'').slice(0,500)};
   for(const [key,val] of Object.entries(vals)){
    const c=h[lower(key)];if(!c)continue;
    const node=children(row,'c').find(x=>col(x.getAttribute('r'))===c);
@@ -265,7 +314,7 @@ function write(bytes,project,record,who){
    put(c,val);
   }
  }
- put(auditCol,who.name);
+ if(auditCol)put(auditCol,who.name);
  const dimension=descendants(doc,'dimension')[0],old=dimension?.getAttribute('ref');
  if(old){const m=/^([A-Z]+\d+:)?([A-Z]+)(\d+)$/.exec(old);if(m&&Number(m[3])<no)dimension.setAttribute('ref',(m[1]||'')+m[2]+no);}
  if(project==='atalia')extendAtaliaFormulaWindows(b,doc,no);

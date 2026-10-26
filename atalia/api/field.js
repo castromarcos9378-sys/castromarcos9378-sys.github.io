@@ -76,7 +76,8 @@ async function commit(who,body){
  // Stable canonical payload guards against reusing an id with a different record.
  const fingerprint=crypto.createHash('sha256').update(JSON.stringify({
   id:r.id,villa:r.villa,tipo:r.tipo,actividad:r.actividad,subactividad:r.subactividad,
-  estado:r.estado,fechaInicio:r.fechaInicio,fechaFin:r.fechaFin||'',observacion:r.observacion||'',registrador:who.id
+  estado:r.estado,fechaInicio:r.fechaInicio,fechaFin:r.fechaFin||'',observacion:r.observacion||'',
+  codigoDetalle:r.codigoDetalle||'',cantidadMedida:r.cantidadMedida??'',notaTecnica:r.notaTecnica||'',registrador:who.id
  })).digest('hex');
  if(current){
   if(current.manifest.fingerprint!==fingerprint||current.manifest.who!==who.id)

@@ -4,7 +4,7 @@ const crypto=require('node:crypto');
 const CONFIG=Object.freeze({
  atalia:{root:'/Atalía Villa',book:'/Atalía Villa/ATALIA_VILLAS_BASE_MAESTRA_CUBICACIONES_V34_AJUSTADA.xlsx',
    env:'FIELD_ATALIA',allowUsers:['jose-reynoso']},
- daos:{root:'/Daos Villas',book:'/Daos Villas/DAOS_LIBRO_OBRA_LEVANTAMIENTO_V07.xlsx',
+ daos:{root:'/Daos Villas',book:'/Daos Villas/01_OPERACION/DAOS_LIBRO_MAESTRO_V08.xlsx',
    env:'FIELD_DAOS',allowUsers:['andres-mora']}
 });
 const cache=new Map();

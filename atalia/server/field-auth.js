@@ -78,7 +78,9 @@ async function activate(req,res,body){
  if(password.length<10||password.length>128||invite.length<24||invite.length>256)
    throw Object.assign(Error('Elige una contraseña de al menos 10 caracteres e introduce el código de invitación'),{status:400});
  let invites;try{invites=JSON.parse(process.env.FIELD_INVITES_JSON||'null');}catch{invites=null;}
- const digest=invites?.[who.id];
+ // La invitación de Andrés se configura por separado: no reemplaza ni revela
+ // la lista de invitaciones ya aprobada para los registradores de Atalía.
+ const digest=who.id==='andres-mora'&&process.env.FIELD_ANDRES_INVITE_DIGEST||invites?.[who.id];
  if(!digest||!/^[a-f0-9]{64}$/i.test(digest)||!timeSafe(sha(invite),digest))
   throw Object.assign(Error('La invitación no es válida'),{status:403});
  const existing=await getProfile(who);

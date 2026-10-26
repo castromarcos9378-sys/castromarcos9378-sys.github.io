@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer">
+<title>DAOS · Autorizar Dropbox</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:24px;background:#edf3f8;color:#153251;font:16px/1.5 system-ui,sans-serif}main{max-width:700px;margin:auto;padding:clamp(20px,5vw,36px);background:white;border-radius:20px;box-shadow:0 12px 40px #14385b20}h1{font-size:clamp(24px,4vw,32px);margin:0 0 12px}h2{font-size:19px}p{color:#425a70}section{border-top:1px solid #dae5ef;margin-top:22px;padding-top:12px}li{margin:10px 0}label{display:block;margin:12px 0 6px;font-weight:700}input{width:100%;padding:12px;border:1px solid #afbfce;border-radius:10px;font:inherit}button{display:inline-block;margin-top:12px;padding:13px 17px;background:#164e8b;color:white;border:0;border-radius:11px;font:inherit;font-weight:700;cursor:pointer}button:disabled{background:#8296aa;cursor:not-allowed}.secondary{background:#e4effa;color:#164e8b}.notice{background:#eef6ff;border-left:4px solid #246db0;padding:13px}.status{min-height:28px;white-space:pre-wrap}.error{color:#b0243f}.success{color:#0b704b}.hidden{display:none}small{display:block;color:#647588;margin-top:12px}code{overflow-wrap:anywhere} @media(max-width:520px){body{padding:12px}button{width:100%}}
+</style>
+</head>
+<body><main>
+<small>ECM · PROYECTO DAOS</small><h1>Autorizar la conexión de Andrés</h1>
+<p>Utilizaremos la aplicación Dropbox «DAOS Registro Obra Móvil MC» que ya funciona en el celular de Marcos. No modifica ni desconecta su teléfono.</p>
+<div class="notice">Esta herramienta no almacena permisos en el navegador ni envía claves a ChatGPT. La autorización privada solo se copia a la configuración segura del servidor.</div>
+<section><h2>1. Conectar Dropbox</h2>
+<ol><li>Pulsa el botón para abrir Dropbox.</li><li>Autoriza con la cuenta donde está la carpeta <b>Daos Villas</b>.</li><li>Dropbox mostrará un código temporal: cópialo y regresa aquí.</li></ol>
+<button id="start" disabled>Abrir autorización de Dropbox</button></section>
+<section><h2>2. Verificar el Libro Maestro</h2>
+<label for="code">Código temporal que mostró Dropbox</label><input id="code" type="password" autocomplete="off" spellcheck="false" placeholder="Pega el código aquí">
+<button id="check" disabled>Comprobar conexión DAOS</button><p id="status" class="status" aria-live="polite">Preparando autorización…</p></section>
+<section id="result" class="hidden"><h2>3. Guardar autorización en Vercel</h2>
+<p>Hemos comprobado que la cuenta puede leer <b>DAOS_LIBRO_MAESTRO_V08.xlsx</b>. Copia estos valores directamente en las variables de Vercel del servidor DAOS:</p>
+<label for="key">FIELD_DAOS_APP_KEY (clave pública)</label><input id="key" readonly><button class="secondary" id="copyKey">Copiar clave pública</button>
+<label for="refresh">FIELD_DAOS_REFRESH_TOKEN (autorización privada)</label><input id="refresh" type="password" readonly autocomplete="off"><button id="copyRefresh">Copiar autorización privada</button>
+<small>La segunda variable debe guardarse como Sensitive, solo en Preview y la rama de Andrés. Nunca la pegues en el chat ni envíes una captura donde se vea. Cierra esta página al finalizar.</small></section>
+<section><p><b>Importante:</b> no introduzcas aquí la contraseña ni el PIN de Dropbox. No pulses «Generar token de acceso» en la consola del desarrollador.</p></section>
+</main>
+<script>
+'use strict';
+const APP_KEY='593xv9xtq02d2sr',MASTER='/Daos Villas/01_OPERACION/DAOS_LIBRO_MAESTRO_V08.xlsx';
+const $=id=>document.getElementById(id);let verifier='',refreshToken='';
+function status(msg,kind=''){const e=$('status');e.textContent=msg;e.className='status '+kind;}
+function b64(bytes){let str='';for(const b of bytes)str+=String.fromCharCode(b);return btoa(str).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+async function begin(){
+ const tab=window.open('about:blank','_blank');
+ if(!tab)return status('El navegador bloqueó la nueva pestaña. Permite ventanas emergentes y vuelve a intentarlo.','error');
+ tab.opener=null;
+ verifier=b64(crypto.getRandomValues(new Uint8Array(48)));
+ const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier));
+ const params=new URLSearchParams({client_id:APP_KEY,response_type:'code',token_access_type:'offline',code_challenge:b64(new Uint8Array(digest)),code_challenge_method:'S256'});
+ tab.location.replace('https://www.dropbox.com/oauth2/authorize?'+params);
+ $('check').disabled=false;status('Autoriza Dropbox en la nueva pestaña y pega aquí el código temporal.');
+}
+async function verify(){
+ const code=$('code').value.trim();if(!code||!verifier)return status('Abre primero la autorización y pega el código.', 'error');
+ $('code').value='';$('check').disabled=true;$('start').disabled=true;status('Comprobando acceso al Libro Maestro de DAOS…');
+ try{
+  const req=new URLSearchParams({grant_type:'authorization_code',client_id:APP_KEY,code,code_verifier:verifier});
+  const response=await fetch('https://api.dropbox.com/oauth2/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:req,cache:'no-store'});
+  if(!response.ok)throw Error('Dropbox rechazó el código. Inicia otra autorización; los códigos son temporales.');
+  const auth=await response.json();if(!auth.access_token||!auth.refresh_token)throw Error('Dropbox no entregó acceso permanente. Repite la autorización.');
+  const check=await fetch('https://api.dropboxapi.com/2/files/get_metadata',{method:'POST',headers:{Authorization:'Bearer '+auth.access_token,'Content-Type':'application/json'},body:JSON.stringify({path:MASTER}),cache:'no-store'});
+  if(!check.ok)throw Error('Esta cuenta no puede acceder al Libro Maestro V08. No guardes su autorización.');
+  const meta=await check.json();if(meta['.tag']!=='file'||meta.name!=='DAOS_LIBRO_MAESTRO_V08.xlsx')throw Error('La ruta apunta a otro archivo.');
+  refreshToken=auth.refresh_token;verifier='';$('key').value=APP_KEY;$('refresh').value=refreshToken;$('result').classList.remove('hidden');status('Acceso a DAOS comprobado. Puedes copiarlo en Vercel.', 'success');
+ }catch(e){verifier='';$('start').disabled=false;status(String(e.message||e),'error');}
+}
+async function copy(v){try{await navigator.clipboard.writeText(v);status('Copiado. Pégalo exclusivamente en Vercel.','success')}catch{status('El navegador no pudo copiar. Selecciona el campo y copia manualmente.','error')}}
+$('start').onclick=()=>begin().catch(e=>status(String(e.message||e),'error'));
+$('check').onclick=verify;
+$('copyKey').onclick=()=>copy(APP_KEY);
+$('copyRefresh').onclick=()=>copy(refreshToken);
+if(globalThis.isSecureContext&&crypto?.subtle){$('start').disabled=false;status('Listo para autorizar DAOS.')}else status('Esta herramienta requiere HTTPS.','error');
+</script>
+</body></html>

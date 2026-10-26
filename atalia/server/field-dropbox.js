@@ -14,10 +14,16 @@ async function accessToken(project){
  if(cached&&cached.until>Date.now()+60000)return cached.token;
  const key=process.env[p.env+'_APP_KEY'],secret=process.env[p.env+'_APP_SECRET'],
  refresh=process.env[p.env+'_REFRESH_TOKEN'];
- if(!(key&&secret&&refresh))throw Object.assign(Error('Conexión segura no configurada'),{status:503});
+ // Marcos' DAOS app already uses Dropbox PKCE (public OAuth client). A refresh
+ // token issued to that client only needs its App Key, not a shared App Secret.
+ // Keep Atalía's existing confidential-client configuration unchanged.
+ if(!(key&&refresh&&(project==='daos'||secret)))
+  throw Object.assign(Error('Conexión segura no configurada'),{status:503});
+ const params=new URLSearchParams({grant_type:'refresh_token',refresh_token:refresh,client_id:key});
+ if(secret)params.set('client_secret',secret);
  const response=await fetch('https://api.dropbox.com/oauth2/token',{
   method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
-  body:new URLSearchParams({grant_type:'refresh_token',refresh_token:refresh,client_id:key,client_secret:secret})});
+  body:params});
  if(!response.ok)throw Object.assign(Error('El servidor no pudo renovar el acceso seguro'),{status:503});
  const json=await response.json();cache.set(project,{token:json.access_token,until:Date.now()+Math.max(300,Number(json.expires_in)||3600)*1000});
  return json.access_token;

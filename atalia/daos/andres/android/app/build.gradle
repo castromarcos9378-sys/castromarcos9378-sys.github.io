@@ -1,0 +1,53 @@
+plugins {
+    id 'com.android.application'
+}
+
+def signingStore = System.getenv('DAOS_SIGNING_STORE')
+def signingStorePassword = System.getenv('DAOS_SIGNING_STORE_PASSWORD')
+def signingAlias = System.getenv('DAOS_SIGNING_KEY_ALIAS')
+def signingKeyPassword = System.getenv('DAOS_SIGNING_KEY_PASSWORD')
+def hasReleaseSigning = signingStore && signingStorePassword && signingAlias && signingKeyPassword
+
+android {
+    namespace 'com.construecm.daos.registro'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.construecm.daos.registro'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '1.0.0'
+    }
+
+    if (hasReleaseSigning) {
+        signingConfigs {
+            release {
+                storeFile file(signingStore)
+                storePassword signingStorePassword
+                keyAlias signingAlias
+                keyPassword signingKeyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (hasReleaseSigning) signingConfig signingConfigs.release
+        }
+        debug {
+            applicationIdSuffix '.dev'
+            versionNameSuffix '-prueba'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core:1.13.1'
+}

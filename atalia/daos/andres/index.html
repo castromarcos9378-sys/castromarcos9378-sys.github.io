@@ -851,6 +851,9 @@ if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostn
 // Acceso delegado: el backend asigna autoría y controla el único proyecto autorizado.
 const FIELD_ID="andres-mora",FIELD_NAME="Arq. Andrés Mora",FIELD_PROJECT="daos",
  FIELD_ENDPOINT='/api/field',FIELD_INCORPORATED="Incorporado en Libro Maestro";
+// El saludo de la pantalla heredada refleja la identidad autorizada de Andrés.
+const fieldWelcome=document.querySelector('#screen-inicio .intro h2');
+if(fieldWelcome?.firstChild?.nodeType===Node.TEXT_NODE){fieldWelcome.firstChild.nodeValue='Hola, Andrés ';}
 let fieldSetup=false,fieldSyncBusy=false;
 const fg=document.getElementById('fieldGate'),fp=document.getElementById('fieldPassword'),
  fi=document.getElementById('fieldInvitation'),fs=document.getElementById('fieldStatus');

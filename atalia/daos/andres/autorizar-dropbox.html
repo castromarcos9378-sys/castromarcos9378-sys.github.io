@@ -18,10 +18,10 @@
 <label for="code">Código temporal que mostró Dropbox</label><input id="code" type="password" autocomplete="off" spellcheck="false" placeholder="Pega el código aquí">
 <button id="check" disabled>Comprobar conexión DAOS</button><p id="status" class="status" aria-live="polite">Preparando autorización…</p></section>
 <section id="result" class="hidden"><h2>3. Guardar autorización en Vercel</h2>
-<p>Hemos comprobado que la cuenta puede leer <b>DAOS_LIBRO_MAESTRO_V08.xlsx</b>. Copia estos valores directamente en las variables de Vercel del servidor DAOS:</p>
+<p>Hemos comprobado que la cuenta puede leer <b>DAOS_LIBRO_MAESTRO_V08.xlsx</b>. En el servidor independiente DAOS la clave pública ya está configurada; copia únicamente la autorización privada a Vercel:</p>
 <label for="key">FIELD_DAOS_APP_KEY (clave pública)</label><input id="key" readonly><button class="secondary" id="copyKey">Copiar clave pública</button>
 <label for="refresh">FIELD_DAOS_REFRESH_TOKEN (autorización privada)</label><input id="refresh" type="password" readonly autocomplete="off"><button id="copyRefresh">Copiar autorización privada</button>
-<small>La segunda variable debe guardarse como Sensitive, solo en Preview y la rama de Andrés. Nunca la pegues en el chat ni envíes una captura donde se vea. Cierra esta página al finalizar.</small></section>
+<small>Guarda FIELD_DAOS_REFRESH_TOKEN como Secret, únicamente en Production del proyecto daos-registro-obra. Nunca la pegues en el chat ni envíes una captura donde se vea. Cierra esta página al finalizar.</small></section>
 <section><p><b>Importante:</b> no introduzcas aquí la contraseña ni el PIN de Dropbox. No pulses «Generar token de acceso» en la consola del desarrollador.</p></section>
 </main>
 <script>

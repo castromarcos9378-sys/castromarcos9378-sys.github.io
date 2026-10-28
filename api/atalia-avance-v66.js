@@ -19,13 +19,13 @@ function compute(sheet){
  const items=new Map(),ids=new Set(),byVilla=new Map(),allVillas=new Set();
  let header=0;
  sheet.eachRow((r,index)=>{if(r.getCell(1).text.trim()==='ID Registro'&&r.getCell(2).text.trim()==='Villa')header=index});
- if(!header)throw new Error('HEADERS_MISSING');
+ if(!header)header=0;
  sheet.eachRow((r,index)=>{
   if(index<=header)return;
-  const id=r.getCell(1).text.trim(),villa=r.getCell(2).text.trim(),tipo=r.getCell(3).text.trim(),act=r.getCell(4).text.trim().toUpperCase(),sub=r.getCell(5).text.trim(),contr=r.getCell(6).text.trim().toUpperCase();
+  const id=String(r.getCell(1).result??r.getCell(1).value?.result??r.getCell(1).text).trim(),villa=r.getCell(2).text.trim(),tipo=r.getCell(3).text.trim(),act=r.getCell(4).text.trim().toUpperCase(),sub=r.getCell(5).text.trim(),contr=r.getCell(6).text.trim().toUpperCase();
   if(!/^\d+$/.test(id)||!/^\d+$/.test(villa)||!['B','C'].includes(tipo)||!(act in WEIGHTS))return;
   if(ids.has(id))return;ids.add(id);allVillas.add(villa);
-  const w=WEIGHTS[act]/100,raw=r.getCell(12).value,progress=typeof raw==='number'?raw:number(r.getCell(12).text);
+  const w=WEIGHTS[act]/100,raw=r.getCell(12).value,cached=raw&&typeof raw==='object'?'result' in raw?raw.result:null:raw,progress=typeof cached==='number'?cached:number(r.getCell(12).text)/100;
   const key=villa+'|'+act;const slot=items.get(key)||{villa,actividad:act,cap:w,general:0,ecm:0};
   slot.general+=progress;if(contr==='ECM')slot.ecm+=progress;items.set(key,slot);
   if(!byVilla.has(villa))byVilla.set(villa,[]);

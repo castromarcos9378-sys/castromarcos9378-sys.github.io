@@ -1,6 +1,6 @@
 // Atalía V6.6 — SOLO LECTURA. Endpoint privado, sin cambios al Libro Maestro.
 const ExcelJS=require('exceljs');
-const FILE='/Atalía Villa/atalia_villas_base_maestra_cubicaciones_v34_ajustada.xlsx';
+const FILE='id:en9YUE7n3L8AAAAAAAACZQ';
 const WEIGHTS=Object.freeze({'PLATEA':18,'NIVEL 1':25,'NIVEL 2':25,'ESCALERAS':4,'ANTEPECHOS':3,'ACABADOS':20});
 const number=v=>{const n=Number(String(v??'').replace('%','').replace(',','.'));return Number.isFinite(n)?n:0};
 async function getWorkbook(){

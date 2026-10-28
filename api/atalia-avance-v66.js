@@ -5,11 +5,36 @@ const WEIGHTS=Object.freeze({'PLATEA':18,'NIVEL 1':25,'NIVEL 2':25,'ESCALERAS':4
 const cellText=c=>{const v=c.value;return String(v&&typeof v==='object'&&'result' in v?v.result??'':c.text??'').trim()};
 const number=v=>{const n=Number(String(v??'').replace('%','').replace(',','.'));return Number.isFinite(n)?n:0};
 async function getWorkbook(){
- const {FIELD_ATALIA_APP_KEY:key,FIELD_ATALIA_APP_SECRET:secret,FIELD_ATALIA_REFRESH_TOKEN:refresh}=process.env;
- if(!key||!secret||!refresh)throw new Error('CREDENTIALS_MISSING');
- const token=await fetch('https://api.dropboxapi.com/oauth2/token',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'refresh_token',refresh_token:refresh,client_id:key,client_secret:secret})});
- if(!token.ok)throw new Error('DROPBOX_AUTH_'+token.status);
- const {access_token}=await token.json();
+let access_token = process.env.ATALIA_V66_TEST_ACCESS_TOKEN;
+
+if (!access_token) {
+  const {
+    FIELD_ATALIA_APP_KEY: key,
+    FIELD_ATALIA_APP_SECRET: secret,
+    FIELD_ATALIA_REFRESH_TOKEN: refresh
+  } = process.env;
+
+  if (!key || !secret || !refresh) {
+    throw new Error('CREDENTIALS_MISSING');
+  }
+
+  const token = await fetch('https://api.dropboxapi.com/oauth2/token', {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refresh,
+      client_id: key,
+      client_secret: secret
+    })
+  });
+
+  if (!token.ok) {
+    throw new Error('DROPBOX_AUTH_' + token.status);
+  }
+
+  ({ access_token } = await token.json());
+}
  const response=await fetch('https://content.dropboxapi.com/2/files/download',{method:'POST',headers:{Authorization:'Bearer '+access_token,'Dropbox-API-Arg':JSON.stringify({path:FILE})}});
  if(!response.ok)throw new Error('DROPBOX_FILE_'+response.status);
  const book=new ExcelJS.Workbook();

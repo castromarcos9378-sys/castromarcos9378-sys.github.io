@@ -31,8 +31,10 @@ function compute(sheet){
   if(!byVilla.has(villa))byVilla.set(villa,[]);
   byVilla.get(villa).push({id,actividad:act,subactividad:sub,contratista:contr,porcentaje:progress,estado:r.getCell(9).text.trim()});
  });
- let total=0,ecm=0;
- for(const x of items.values()){total+=Math.min(x.general,x.cap);ecm+=Math.min(x.ecm,x.cap);}
+ const byTotal=new Map(),byEcm=new Map();
+ for(const x of items.values()){byTotal.set(x.villa,(byTotal.get(x.villa)||0)+x.general);byEcm.set(x.villa,(byEcm.get(x.villa)||0)+x.ecm);}
+ const total=[...byTotal.values()].reduce((sum,v)=>sum+Math.min(1,v),0);
+ const ecm=[...byEcm.values()].reduce((sum,v)=>sum+Math.min(1,v),0);
  if(!byVilla.has('117'))throw new Error('VILLA_117_NOT_FOUND');
  return {universe:52,recordedVillas:allVillas.size,rows:ids.size,weightsSum:95,general:Number((total/52*100).toFixed(2)),ecm:Number((ecm/52*100).toFixed(2)),villa117:byVilla.get('117')};
 }

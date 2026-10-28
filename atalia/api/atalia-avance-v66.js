@@ -75,6 +75,12 @@ module.exports=async(req,res)=>{
  const access=process.env.ATALIA_AVANCE_READ_TOKEN;
  if(!access||req.headers.authorization!=='Bearer '+access)return res.status(401).json({ok:false,error:'UNAUTHORIZED'});
  try{const wb=await getWorkbook();const sheet=wb.getWorksheet('Registro de Obra');if(!sheet)throw new Error('REGISTRO_MISSING');
+ if(/spreadsheetml/i.test(req.headers.accept||'')){
+  const buffer=await wb.xlsx.writeBuffer();
+  res.setHeader('Content-Type','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition','attachment; filename="atalia_maestro_v66.xlsx"');
+  return res.status(200).send(Buffer.from(buffer));
+ }
  return res.status(200).json({ok:true,updatedAt:new Date().toISOString(),source:'Dropbox Libro Maestro',...compute(sheet)});
  }catch(e){console.error('atalia-avance-v66',String(e.message));return res.status(503).json({ok:false,error:'UPSTREAM_UNAVAILABLE'});}
 };

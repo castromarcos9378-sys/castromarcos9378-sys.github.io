@@ -66,6 +66,10 @@ function compute(sheet){
 }
 module.exports=async(req,res)=>{
  res.setHeader('Cache-Control','private, no-store');
+ res.setHeader('Access-Control-Allow-Origin','*');
+ res.setHeader('Access-Control-Allow-Headers','Authorization, Accept, Content-Type');
+ res.setHeader('Access-Control-Allow-Methods','GET, OPTIONS');
+ if(req.method==='OPTIONS')return res.status(204).end();
  if(req.method!=='GET')return res.status(405).json({ok:false,error:'METHOD_NOT_ALLOWED'});
  // Never expose operational metrics or workbook data without explicit authorization.
  const access=process.env.ATALIA_AVANCE_READ_TOKEN;

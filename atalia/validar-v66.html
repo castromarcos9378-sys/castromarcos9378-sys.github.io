@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Atalía V6.6 - Verificación</title>
+</head>
+<body>
+  <h2>Atalía V6.6 - Prueba de Dropbox</h2>
+
+  <p>Introduce la clave de lectura guardada en Vercel.</p>
+
+  <input id="clave" type="password"
+         placeholder="Clave de lectura"
+         autocomplete="off">
+
+  <button onclick="validar()">Verificar conexión</button>
+
+  <pre id="resultado"></pre>
+
+  <script>
+    async function validar() {
+      const campo = document.getElementById("clave");
+      const clave = campo.value;
+      campo.value = "";
+
+      const salida = document.getElementById("resultado");
+      salida.textContent = "Consultando Dropbox...";
+
+      try {
+        const respuesta = await fetch("/api/atalia-avance-v66", {
+          method: "GET",
+          headers: {
+            "Authorization": "Bearer " + clave
+          },
+          cache: "no-store"
+        });
+
+        const datos = await respuesta.json();
+
+        salida.textContent = JSON.stringify({
+          estadoHTTP: respuesta.status,
+          conexion: datos.ok,
+          error: datos.error,
+          avanceGeneral: datos.general,
+          avanceECM: datos.ecm,
+          registros: datos.rows,
+          villa117: (datos.villa117 || []).filter(
+            r => ["240", "290"].includes(String(r.id))
+          )
+        }, null, 2);
+
+      } catch (error) {
+        salida.textContent = "Error de conexión: " + error.message;
+      }
+    }
+  </script>
+</body>
+</html>

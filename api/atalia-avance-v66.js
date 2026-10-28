@@ -25,7 +25,7 @@ function compute(sheet){
   const id=r.getCell(1).text.trim(),villa=r.getCell(2).text.trim(),tipo=r.getCell(3).text.trim(),act=r.getCell(4).text.trim().toUpperCase(),sub=r.getCell(5).text.trim(),contr=r.getCell(6).text.trim().toUpperCase();
   if(!/^\d+$/.test(id)||!/^\d+$/.test(villa)||!['B','C'].includes(tipo)||!(act in WEIGHTS))return;
   if(ids.has(id))return;ids.add(id);allVillas.add(villa);
-  const w=WEIGHTS[act],raw=r.getCell(12).value,progress=typeof raw==='number'&&raw<=1?raw*100:number(r.getCell(12).text);
+  const w=WEIGHTS[act]/100,raw=r.getCell(12).value,progress=typeof raw==='number'?raw:number(r.getCell(12).text);
   const key=villa+'|'+act;const slot=items.get(key)||{villa,actividad:act,cap:w,general:0,ecm:0};
   slot.general+=progress;if(contr==='ECM')slot.ecm+=progress;items.set(key,slot);
   if(!byVilla.has(villa))byVilla.set(villa,[]);
@@ -34,7 +34,7 @@ function compute(sheet){
  let total=0,ecm=0;
  for(const x of items.values()){total+=Math.min(x.general,x.cap);ecm+=Math.min(x.ecm,x.cap);}
  if(!byVilla.has('117'))throw new Error('VILLA_117_NOT_FOUND');
- return {universe:52,recordedVillas:allVillas.size,rows:ids.size,weightsSum:95,general:Number((total/52).toFixed(2)),ecm:Number((ecm/52).toFixed(2)),villa117:byVilla.get('117')};
+ return {universe:52,recordedVillas:allVillas.size,rows:ids.size,weightsSum:95,general:Number((total/52*100).toFixed(2)),ecm:Number((ecm/52*100).toFixed(2)),villa117:byVilla.get('117')};
 }
 module.exports=async(req,res)=>{
  res.setHeader('Cache-Control','private, no-store');

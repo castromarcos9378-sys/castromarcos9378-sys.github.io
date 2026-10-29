@@ -27,9 +27,10 @@ function progress(buffer){
  const byVilla=new Map(villas.map(v=>[v,{total:0,ecm:0,old:0}]));
  const recordIds=new Set();
  for(const r of registry.slice(1)){
-  const villa=Number(r.B),fraction=Number(r.L);
-  if(!byVilla.has(villa)||!Number.isFinite(fraction)||fraction<0||fraction>1)continue;
-  if(!Number.isInteger(Number(r.A)))continue;
+  const villa=Number(r.B),fraction=Number(r.L),recordId=Number(r.A);
+  if(!byVilla.has(villa)||!Number.isInteger(recordId)||recordId<=0)continue;
+  recordIds.add(recordId);
+  if(!Number.isFinite(fraction)||fraction<0||fraction>1)continue;
   const v=byVilla.get(villa);v.total+=fraction;
   if(String(r.F).trim().toUpperCase()==='ECM')v.ecm+=fraction;
   if(String(r.F).trim().toUpperCase()==='CONTRATISTA ANTERIOR')v.old+=fraction;

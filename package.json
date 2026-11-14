@@ -1,0 +1,8 @@
+{
+  "name": "atalia-staging-reader",
+  "private": true,
+  "version": "0.0.1",
+  "dependencies": {
+    "exceljs": "^4.4.0"
+  }
+}

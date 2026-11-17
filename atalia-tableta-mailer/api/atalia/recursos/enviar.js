@@ -58,6 +58,19 @@ async function authorize(req) {
     }
   }
 
+  // Infinix authorization is independent and revocable; only a SHA-256 digest resides on the server.
+  const phoneDigest = String(process.env.PHONE_DEVICE_TOKEN_SHA256 || "").trim().toLowerCase();
+  if (/^[a-f0-9]{64}$/.test(phoneDigest)) {
+    const actual = crypto.createHash("sha256").update(bearer).digest("hex");
+    if (safeEqual(actual, phoneDigest)) {
+      const origin = String(req.headers.origin || "").toLowerCase();
+      if (origin === "null" || origin === "https://atalia-tableta-mailer.vercel.app") {
+        return { mode: "infinix_device" };
+      }
+      return null;
+    }
+  }
+
   const allowedAccount = String(process.env.DROPBOX_ALLOWED_ACCOUNT_ID || "").trim();
   if (!allowedAccount) return null;
 

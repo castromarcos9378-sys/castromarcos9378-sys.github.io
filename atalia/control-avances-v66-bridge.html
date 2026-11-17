@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="robots" content="noindex"><title>Atalía · conexión de avances</title></head>
+<body><script>
+(()=>{'use strict';
+const API='https://atalia-registro-obra.vercel.app/api/avances-v66';
+const CHANNEL='ATALIA_AVANCES_BRIDGE_V1';
+let busy=false;
+function isValid(d){return d&&d.ok===true&&d.universe===52&&
+  d.villas&&typeof d.villas==='object'&&d.villas['117']&&
+  Number.isFinite(Number(d.general))&&Number.isFinite(Number(d.ecm));}
+async function refresh(){
+  if(busy)return;busy=true;
+  try{
+    const r=await fetch(API,{cache:'no-store',credentials:'omit',headers:{Accept:'application/json'}});
+    if(!r.ok)throw Error('HTTP '+r.status);
+    const data=await r.json();
+    if(!isValid(data))throw Error('Datos inválidos');
+    window.parent.postMessage({channel:CHANNEL,ok:true,data:data},'*');
+  }catch(e){
+    window.parent.postMessage({channel:CHANNEL,ok:false,error:String(e.message||'Error')},'*');
+  }finally{busy=false;}
+}
+refresh();setInterval(refresh,60000);
+addEventListener('focus',refresh);
+addEventListener('online',refresh);
+addEventListener('message',e=>{if(e.data&&e.data.channel==='ATALIA_AVANCES_BRIDGE_REFRESH_V1')refresh();});
+})();
+</script></body></html>
